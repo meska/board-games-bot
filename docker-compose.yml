@@ -1,0 +1,47 @@
+version: '3.7'
+
+services:
+
+  redis:
+    image: redis:latest
+    restart: always
+
+  app:
+    build: .
+    restart: always
+    volumes:
+      - .:/app
+    ports:
+      - "8003:8003"
+    depends_on:
+      - redis
+      - db
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DEBUG=${DEBUG}
+    command: /bin/bash -c 'python manage.py migrate;python manage.py runserver 0.0.0.0:8003'
+
+  db:
+    image: postgres:14
+    restart: always
+    ports:
+      - "54323:5432"
+    volumes:
+      - ${PWD}/db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+  worker:
+    build: .
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - db
+      - app
+    restart: always
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}-
+      - DEBUG=${DEBUG}
+    command: /bin/bash -c 'python manage.py rqworker high default low'
