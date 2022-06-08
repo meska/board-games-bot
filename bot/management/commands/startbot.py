@@ -12,9 +12,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         print("Starting Bot...")
-        application = ApplicationBuilder().token(settings.TELEGRAM_TOKEN).build()
+        bot = ApplicationBuilder().token(settings.TELEGRAM_TOKEN).build()
 
         start_handler = CommandHandler('start', start)
-        application.add_handler(start_handler)
+        bot.add_handler(start_handler)
 
-        application.run_polling()
+        bot.run_polling()

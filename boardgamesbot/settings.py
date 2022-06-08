@@ -19,7 +19,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3zvxw^u5e4!5$1w5_5wvq-%xjo2y0-fkr$&o%9in-btf1-kf6#'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
@@ -74,9 +74,28 @@ WSGI_APPLICATION = 'boardgamesbot.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'postgresql',
+        'USER': 'postgresql',
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': 'db',
+        'PORT': '5432',
     }
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": 'redis://redis:6379/1',
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            'CONNECTION_POOL_CLASS': 'redis.BlockingConnectionPool',
+            'CONNECTION_POOL_CLASS_KWARGS': {
+                'max_connections': 20,
+                'timeout': 20,
+            },
+        }
+    },
 }
 
 # Password validation
@@ -101,11 +120,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
@@ -118,4 +134,23 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN', None)
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN', None) if not DEBUG else os.getenv('TELEGRAM_TOKEN_DEV', None)
+
+RQ_QUEUES = {
+    'high': {
+        'USE_REDIS_CACHE': 'default',
+        'DEFAULT_TIMEOUT': 500
+    },
+    'default': {
+        'USE_REDIS_CACHE': 'default',
+        'DEFAULT_TIMEOUT': 500
+    },
+    'low': {
+        'USE_REDIS_CACHE': 'default',
+        'DEFAULT_TIMEOUT': 500
+    }
+}
+
+if DEBUG:
+    for queueConfig in RQ_QUEUES:
+        RQ_QUEUES[queueConfig]['ASYNC'] = False
