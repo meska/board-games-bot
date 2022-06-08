@@ -2,7 +2,6 @@ version: '3.7'
 
 services:
 
-
   admin:
     build: .
     restart: always
@@ -20,7 +19,6 @@ services:
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
       - TELEGRAM_TOKEN_DEV=${TELEGRAM_TOKEN_DEV}
     command: /bin/bash -c 'python manage.py migrate;python manage.py runserver 0.0.0.0:8003'
-
 
   bot:
     build: .
@@ -55,7 +53,6 @@ services:
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
       - TELEGRAM_TOKEN_DEV=${TELEGRAM_TOKEN_DEV}
     command: /bin/bash -c 'python manage.py rqworker high default low'
-
 
   redis:
     image: redis:latest
