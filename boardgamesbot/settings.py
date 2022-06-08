@@ -36,7 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_rq',
-    'surveys.apps.SurveysConfig',
+    'polls.apps.PollsConfig',
     'bot.apps.BotConfig',
 ]
 
@@ -76,8 +76,8 @@ WSGI_APPLICATION = 'boardgamesbot.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'postgresql',
-        'USER': 'postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres',
         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
         'HOST': 'db',
         'PORT': '5432',

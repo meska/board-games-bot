@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
 
-  admin:
+  web:
     build: .
     restart: always
     volumes:
@@ -28,7 +28,6 @@ services:
     depends_on:
       - redis
       - db
-      - admin
     environment:
       - REDIS_URL=redis://redis:6379
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -44,7 +43,6 @@ services:
     depends_on:
       - redis
       - db
-      - admin
     restart: always
     environment:
       - REDIS_URL=redis://redis:6379
