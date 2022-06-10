@@ -5,6 +5,9 @@ from django_rq import job
 def update_weekly_poll(poll_id):
     from polls.models import WeeklyPoll
     wp = WeeklyPoll.objects.get(id=poll_id)
+
+    # TODO: create and delete the poll on schedule
+
     print(wp)
 
 
