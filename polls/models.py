@@ -1,5 +1,7 @@
 import pendulum
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from boardgamesbot.decorators import database_sync_to_async
 
@@ -27,6 +29,12 @@ class WeeklyPoll(models.Model):
 
     def __str__(self):
         return self.chat_id
+
+
+@receiver(post_save, sender=WeeklyPoll, dispatch_uid='_save')
+def weekly_poll_save(instance, **kwargs):
+    from polls.tasks import update_weekly_poll
+    update_weekly_poll.delay(instance.id)
 
 
 @database_sync_to_async

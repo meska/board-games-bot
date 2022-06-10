@@ -6,6 +6,7 @@ from pipenv.vendor.dateutil.relativedelta import relativedelta
 from rq.exceptions import NoSuchJobError
 from sentry_sdk import capture_exception
 
+
 def clean_or_recover_errors(queue, jobs_id):
     tz = pytz.timezone('UTC')
     for job_id in jobs_id:

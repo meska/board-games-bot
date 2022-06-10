@@ -36,8 +36,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_rq',
+    'scheduler.apps.SchedulerConfig',
     'polls.apps.PollsConfig',
-    'bot.apps.BotConfig',
+    'bot.apps.BotConfig'
 ]
 
 MIDDLEWARE = [
