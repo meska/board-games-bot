@@ -1,5 +1,14 @@
 version: '3.7'
 
+x-common-environment: &common-environment
+  REDIS_URL: redis://redis:6379
+  DEBUG: ${DEBUG}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
+  TELEGRAM_TOKEN_DEV: ${TELEGRAM_TOKEN_DEV}
+  SENTRY_DSN: ${SENTRY_DSN}
+  SECRET_KEY: ${SECRET_KEY}
+
 services:
 
   web:
@@ -12,12 +21,7 @@ services:
     depends_on:
       - redis
       - db
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - DEBUG=${DEBUG}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
-      - TELEGRAM_TOKEN_DEV=${TELEGRAM_TOKEN_DEV}
+    environment: *common-environment
     command: /bin/bash -c 'python manage.py migrate;python manage.py runserver 0.0.0.0:8003'
 
   bot:
@@ -28,12 +32,7 @@ services:
     depends_on:
       - redis
       - db
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - DEBUG=${DEBUG}
-      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
-      - TELEGRAM_TOKEN_DEV=${TELEGRAM_TOKEN_DEV}
+    environment: *common-environment
     command: /bin/bash -c 'python manage.py startbot'
 
   worker:
@@ -44,12 +43,18 @@ services:
       - redis
       - db
     restart: always
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - DEBUG=${DEBUG}
-      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
-      - TELEGRAM_TOKEN_DEV=${TELEGRAM_TOKEN_DEV}
+    environment: *common-environment
+    command: /bin/bash -c 'python manage.py rqworker high default low'
+
+  scheduler:
+    build: .
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - db
+    restart: always
+    environment: *common-environment
     command: /bin/bash -c 'python manage.py rqworker high default low'
 
   redis:
