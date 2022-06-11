@@ -1,4 +1,3 @@
-import pendulum
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -49,7 +48,6 @@ def new_poll(message_id, chat_id, question, answers):
 def new_weekly_poll(chat_id: int, weekday: int):
     db_poll, created = WeeklyPoll.objects.get_or_create(chat_id=chat_id)
     db_poll.weekday = weekday
-    db_poll.poll_date = pendulum.now().next(weekday).date()
     db_poll.save()
     return created
 
