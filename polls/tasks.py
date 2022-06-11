@@ -17,8 +17,7 @@ def update_weekly_poll(poll_id):
     if wp.message_id:
         # poll is online, check if it's time to update
         if diff < 0:
-            # poll is overdue, unpin it and forget it
-
+            # poll is overdue, stop and unpin
             async_to_sync(bot.stop_poll)(wp.chat_id, wp.message_id)
             async_to_sync(bot.unpin_chat_message)(wp.chat_id, wp.message_id)
             wp.message_id = None
