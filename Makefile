@@ -1,6 +1,6 @@
 translations:
-	@python manage.py makemessages --locale it; \
-	python manage.py compilemessages
+	@docker-compose run --rm web python manage.py makemessages --locale it; \
+	docker-compose run --rm web python manage.py compilemessages
 
 migrate:
 	@docker-compose run --rm web python manage.py makemigrations;\

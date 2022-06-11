@@ -1,4 +1,5 @@
 import pendulum
+from django.utils import translation
 from django.utils.translation import gettext as _
 from munch import munchify
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -8,7 +9,6 @@ from polls.models import new_weekly_poll
 
 
 async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
-    print("start")
     await context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
 
 
@@ -26,7 +26,7 @@ async def callBack(update: Update, context: CallbackContext.DEFAULT_TYPE) -> Non
 
 async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """Manages weekly polls"""
-
+    translation.activate(update.effective_user.language_code)
     if update.callback_query:
         query = update.callback_query
         payload = munchify(context.bot_data)
@@ -37,17 +37,17 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
             # save weekly poll
             new = await new_weekly_poll(update.effective_chat.id, int(query.data))
             if new:
+
                 await query.edit_message_text(
                     text=_("Weekly poll saved")
                 )
             else:
+
                 await query.edit_message_text(
                     text=_("Weekly poll updated")
                 )
     else:
         # TODO: check existing poll
-        # TODO: set pool language
-        # days of the week (1 = Monday, 7 = Sunday) as for date.isoweekday()
 
         keyboard = [[
             InlineKeyboardButton(_("Monday"), callback_data=pendulum.MONDAY),

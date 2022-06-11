@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-06-08 10:05+0000\n"
+"POT-Creation-Date: 2022-06-11 16:41+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,10 +18,54 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: bot/commands.py:13
+#: bot/commands.py:40
+msgid "Weekly poll saved"
+msgstr "Sondaggio settimanale salvato"
+
+#: bot/commands.py:45
+msgid "Weekly poll updated"
+msgstr "Sondaggio settimanale aggiornato"
+
+#: bot/commands.py:53
+msgid "Monday"
+msgstr "Lunedì"
+
+#: bot/commands.py:54
+msgid "Tuesday"
+msgstr "Martedì"
+
+#: bot/commands.py:55
+msgid "Wednesday"
+msgstr "Mercoledì"
+
+#: bot/commands.py:57
+msgid "Thursday"
+msgstr "Giovedì"
+
+#: bot/commands.py:58
+msgid "Friday"
+msgstr "Venerdì"
+
+#: bot/commands.py:59
+msgid "Saturday"
+msgstr "Sabato"
+
+#: bot/commands.py:61
+msgid "Sunday"
+msgstr "Domenica"
+
+#: bot/commands.py:65
+msgid "Day of the week?"
+msgstr "Giorno della settimana?"
+
+#: bot/commands.py:83 polls/tasks.py:41
 msgid "Yes"
 msgstr "Sì"
 
-#: bot/commands.py:13
+#: bot/commands.py:83 polls/tasks.py:41
 msgid "No"
-msgstr ""
+msgstr "No"
+
+#: bot/commands.py:84
+msgid "Change Me"
+msgstr "Cambimi"

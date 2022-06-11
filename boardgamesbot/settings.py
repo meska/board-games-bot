@@ -126,6 +126,10 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+LOCALE_PATHS = (
+    os.path.join(BASE_DIR, '/locale'),
+)
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
@@ -136,7 +140,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN', None) if not DEBUG else os.getenv('TELEGRAM_TOKEN_DEV', None)
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN', None)
 
 RQ_QUEUES = {
     'high': {
@@ -169,3 +173,34 @@ if SENTRY_DSN:
 if DEBUG:
     for queueConfig in RQ_QUEUES:
         RQ_QUEUES[queueConfig]['ASYNC'] = False
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'telegram': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'gamebot': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+    },
+}

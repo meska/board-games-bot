@@ -1,3 +1,5 @@
+import logging
+
 import pendulum
 from asgiref.sync import async_to_sync
 from django.conf import settings
@@ -5,10 +7,13 @@ from django.utils.translation import gettext as _
 from django_rq import job
 from telegram import Bot
 
+logger = logging.getLogger(f'gamebot.{__name__}')
+
 
 @job
 def update_weekly_poll(poll_id):
     from polls.models import WeeklyPoll
+    logger.debug(f'update_weekly_poll({poll_id})')
     wp = WeeklyPoll.objects.get(id=poll_id)
     diff = pendulum.now().date().diff(wp.poll_date, False).days
     bot = Bot(settings.TELEGRAM_TOKEN)
@@ -29,7 +34,7 @@ def update_weekly_poll(poll_id):
         wp.poll_date = pendulum.now().next(wp.weekday).date()
         updated = True
 
-    if pendulum.now().date().diff(wp.poll_date).days < 7 and not wp.message_id:
+    if diff < 7 and not wp.message_id:
         # create the poll on telegram
         bot = Bot(settings.TELEGRAM_TOKEN)
         poll = async_to_sync(bot.send_poll)(
@@ -40,7 +45,10 @@ def update_weekly_poll(poll_id):
         updated = True
 
     if updated:
-        wp.save()
+        WeeklyPoll.objects.filter(id=poll_id).update(
+            message_id=wp.message_id,
+            poll_date=wp.poll_date
+        )
 
 
 @job

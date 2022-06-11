@@ -1,9 +1,13 @@
+import logging
+
 from django.conf import settings
 from django.core.management import BaseCommand
 # noinspection PyUnresolvedReferences
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler
 
 from bot.commands import callBack, poll, start, weeklypoll
+
+logger = logging.getLogger(f'gamebot.{__name__}')
 
 
 class Command(BaseCommand):
@@ -12,7 +16,7 @@ class Command(BaseCommand):
     """
 
     def handle(self, *args, **options):
-        print("Init Bot...")
+        logger.info('Init Bot...')
         bot = ApplicationBuilder().token(settings.TELEGRAM_TOKEN).build()
 
         # Add commands
@@ -22,5 +26,5 @@ class Command(BaseCommand):
         bot.add_handler(CallbackQueryHandler(callBack))
 
         # Start Bot
-        print("Start Bot")
+        logger.info('Starting Bot...')
         bot.run_polling()
