@@ -13,7 +13,7 @@ from polls.models import delete_weekly_poll, get_weekly_poll, new_weekly_poll
 
 
 async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=_("Welcome to Game Night Bot!"))
 
 
 async def callBack(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
@@ -32,13 +32,15 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
     """Manages weekly polls"""
 
     # check if user is channel admin
-    admins = await update.effective_chat.get_administrators()
-    if update.effective_user.id not in [admin.user.id for admin in admins]:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=_("You must be an administrator of this channel to use this feature.")
-        )
-        return
+    if update.effective_chat.id < 0:
+        # checks only for grups
+        admins = await update.effective_chat.get_administrators()
+        if update.effective_user.id not in [admin.user.id for admin in admins]:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=_("You must be an administrator of this channel to use this feature.")
+            )
+            return
 
     translation.activate(update.effective_user.language_code)
     if update.callback_query:

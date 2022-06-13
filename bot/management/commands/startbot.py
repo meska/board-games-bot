@@ -1,4 +1,5 @@
 import logging
+
 from django.conf import settings
 from django.core.management import BaseCommand
 # noinspection PyUnresolvedReferences
@@ -12,6 +13,13 @@ logger = logging.getLogger(f'gamebot.{__name__}')
 class Command(BaseCommand):
     """
     Starts Bot
+
+    Command list:
+
+    weeklypoll - manage a weekly poll
+    version - show version
+    roll - roll a dice
+
     """
 
     def handle(self, *args, **options):
