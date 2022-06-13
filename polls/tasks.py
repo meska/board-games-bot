@@ -16,9 +16,6 @@ def update_weekly_poll(poll_id):
     logger.debug(f'start update_weekly_poll({poll_id})')
     wp = WeeklyPoll.objects.get(id=poll_id)
 
-    if not wp.poll_date:
-        wp.poll_date = pendulum.now().next(wp.weekday).date()
-
     diff = pendulum.now().date().diff(wp.poll_date, False).days
 
     updated = False

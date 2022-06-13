@@ -72,9 +72,12 @@ def delete_weekly_poll(chat_id: int):
         wp = WeeklyPoll.objects.get(chat_id=chat_id)
 
         if wp.message_id:
-            bot = Bot(settings.TELEGRAM_TOKEN)
-            async_to_sync(bot.stop_poll)(wp.chat_id, wp.message_id)
-            async_to_sync(bot.unpin_chat_message)(wp.chat_id, wp.message_id)
+            async_to_sync(Bot(settings.TELEGRAM_TOKEN).stop_poll)(wp.chat_id, wp.message_id)
+            async_to_sync(Bot(settings.TELEGRAM_TOKEN).unpin_chat_message)(wp.chat_id, wp.message_id)
+
+            # if pool is in the future delete it
+            if wp.poll_date > pendulum.now().date():
+                async_to_sync(Bot(settings.TELEGRAM_TOKEN).delete_message)(wp.chat_id, wp.message_id)
 
         wp.delete()
     except ObjectDoesNotExist:

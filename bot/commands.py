@@ -1,4 +1,5 @@
 import os
+from asyncio import sleep
 
 import pendulum
 from django.conf import settings
@@ -51,26 +52,33 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
                 await query.edit_message_text(
                     text=_("Weekly poll not updated")
                 )
+                await sleep(5)
+                await query.message.delete()
                 return
 
+            await delete_weekly_poll(update.effective_chat.id)
+
             if query.data == '-1':
-                await delete_weekly_poll(update.effective_chat.id)
                 await query.edit_message_text(
                     text=_("Weekly poll deleted")
                 )
-                return
 
-                # save weekly poll
-            new = await new_weekly_poll(update.effective_chat.id, int(query.data))
-            if new:
-                await query.edit_message_text(
-                    text=_("Weekly poll saved")
-                )
+                await sleep(5)
+                await query.message.delete()
             else:
+                # save weekly poll
+                new = await new_weekly_poll(update.effective_chat.id, int(query.data))
+                if new:
+                    await query.edit_message_text(
+                        text=_("Weekly poll saved")
+                    )
+                else:
+                    await query.edit_message_text(
+                        text=_("Weekly poll updated")
+                    )
 
-                await query.edit_message_text(
-                    text=_("Weekly poll updated")
-                )
+                await sleep(5)
+                await query.message.delete()
     else:
         # check existing poll
 
