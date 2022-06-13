@@ -24,10 +24,8 @@ def update_weekly_poll(poll_id):
         # poll is online, check if it's time to update
         if diff < 0:
             # poll is overdue, stop and unpin
-            bot = Bot(settings.TELEGRAM_TOKEN)
-            async_to_sync(bot.stop_poll)(wp.chat_id, wp.message_id)
-            bot = Bot(settings.TELEGRAM_TOKEN)
-            async_to_sync(bot.unpin_chat_message)(wp.chat_id, wp.message_id)
+            async_to_sync(Bot(settings.TELEGRAM_TOKEN).stop_poll)(wp.chat_id, wp.message_id)
+            async_to_sync(Bot(settings.TELEGRAM_TOKEN).unpin_chat_message)(wp.chat_id, wp.message_id)
             wp.message_id = None
             wp.poll_date = None
             updated = True
@@ -39,12 +37,10 @@ def update_weekly_poll(poll_id):
 
     if diff < 7 and not wp.message_id:
         # create the poll on telegram
-        bot = Bot(settings.TELEGRAM_TOKEN)
-        poll = async_to_sync(bot.send_poll)(
+        poll = async_to_sync(Bot(settings.TELEGRAM_TOKEN).send_poll)(
             wp.chat_id, f"{_('Game Night')} {wp.poll_date.strftime('%A %-d %b')}", [_('Yes'), _('No')],
             is_anonymous=False)
-        bot = Bot(settings.TELEGRAM_TOKEN)
-        async_to_sync(bot.pin_chat_message)(wp.chat_id, poll.message_id)
+        async_to_sync(Bot(settings.TELEGRAM_TOKEN).pin_chat_message)(wp.chat_id, poll.message_id)
         wp.message_id = poll.message_id
         updated = True
 
