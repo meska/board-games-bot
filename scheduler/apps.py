@@ -1,10 +1,13 @@
+import logging
 import sys
 from datetime import datetime
-from importlib import import_module
-
 from django.apps import AppConfig
 from django_rq import get_scheduler
+from importlib import import_module
+
 from scheduler.jobs import jobs
+
+logger = logging.getLogger(f'gamebot.{__name__}')
 
 
 class SchedulerConfig(AppConfig):
@@ -23,7 +26,8 @@ class SchedulerConfig(AppConfig):
         res = self.scheduler.schedule(
             datetime.utcnow(), func, args=args, kwargs=kwargs, interval=interval,
             queue_name='high')
-        print(f"scheduled job: {res.description}")
+
+        logger.info(f"scheduled job: {res.description} interval: {interval}s")
 
     def cron(self, taskname, cron_string, args=None, kwargs=None):
         """
@@ -33,7 +37,7 @@ class SchedulerConfig(AppConfig):
         mod = import_module(mod_name)
         func = getattr(mod, func_name)
         res = self.scheduler.cron(cron_string, func, args=args, kwargs=kwargs, queue_name='high')
-        print(f"scheduled cron: {res.description}")
+        logger.info(f"scheduled cron: {res.description} interval: {cron_string}")
 
     def ready(self):
         """
@@ -49,7 +53,7 @@ class SchedulerConfig(AppConfig):
             for j in jobs:
                 if scheduled.description.startswith(j['job']):
                     # resync all'avvio
-                    print(f"Cleaning scheduled job {scheduled}")
+                    logger.info(f"Cleaning scheduled job {scheduled}")
                     scheduled.delete()
 
         # schedule jobs

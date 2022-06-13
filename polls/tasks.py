@@ -15,15 +15,21 @@ def update_weekly_poll(poll_id):
     from polls.models import WeeklyPoll
     logger.debug(f'start update_weekly_poll({poll_id})')
     wp = WeeklyPoll.objects.get(id=poll_id)
+
+    if not wp.poll_date:
+        wp.poll_date = pendulum.now().next(wp.weekday).date()
+
     diff = pendulum.now().date().diff(wp.poll_date, False).days
-    bot = Bot(settings.TELEGRAM_TOKEN)
+
     updated = False
 
     if wp.message_id:
         # poll is online, check if it's time to update
         if diff < 0:
             # poll is overdue, stop and unpin
+            bot = Bot(settings.TELEGRAM_TOKEN)
             async_to_sync(bot.stop_poll)(wp.chat_id, wp.message_id)
+            bot = Bot(settings.TELEGRAM_TOKEN)
             async_to_sync(bot.unpin_chat_message)(wp.chat_id, wp.message_id)
             wp.message_id = None
             wp.poll_date = None
@@ -40,7 +46,8 @@ def update_weekly_poll(poll_id):
         poll = async_to_sync(bot.send_poll)(
             wp.chat_id, f"{_('Game Night')} {wp.poll_date.strftime('%A %-d %b')}", [_('Yes'), _('No')],
             is_anonymous=False)
-        async_to_sync(poll.pin)()
+        bot = Bot(settings.TELEGRAM_TOKEN)
+        async_to_sync(bot.pin_chat_message)(wp.chat_id, poll.message_id)
         wp.message_id = poll.message_id
         updated = True
 

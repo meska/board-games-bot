@@ -1,4 +1,5 @@
 import os
+
 import pendulum
 from django.conf import settings
 from django.utils import translation
@@ -7,7 +8,7 @@ from munch import munchify
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
-from polls.models import new_weekly_poll
+from polls.models import delete_weekly_poll, get_weekly_poll, new_weekly_poll
 
 
 async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
@@ -28,6 +29,16 @@ async def callBack(update: Update, context: CallbackContext.DEFAULT_TYPE) -> Non
 
 async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """Manages weekly polls"""
+
+    # check if user is channel admin
+    admins = await update.effective_chat.get_administrators()
+    if update.effective_user.id not in [admin.user.id for admin in admins]:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=_("You must be an administrator of this channel to use this feature.")
+        )
+        return
+
     translation.activate(update.effective_user.language_code)
     if update.callback_query:
         query = update.callback_query
@@ -36,10 +47,22 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
         if payload.weeklypoll.field == 'weekday':
             payload.weeklypoll.weekday = query.data
 
-            # save weekly poll
+            if query.data == '0':
+                await query.edit_message_text(
+                    text=_("Weekly poll not updated")
+                )
+                return
+
+            if query.data == '-1':
+                await delete_weekly_poll(update.effective_chat.id)
+                await query.edit_message_text(
+                    text=_("Weekly poll deleted")
+                )
+                return
+
+                # save weekly poll
             new = await new_weekly_poll(update.effective_chat.id, int(query.data))
             if new:
-
                 await query.edit_message_text(
                     text=_("Weekly poll saved")
                 )
@@ -49,34 +72,75 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
                     text=_("Weekly poll updated")
                 )
     else:
-        # TODO: check existing poll
+        # check existing poll
 
-        keyboard = [[
-            InlineKeyboardButton(_("Monday"), callback_data=pendulum.MONDAY),
-            InlineKeyboardButton(_("Tuesday"), callback_data=pendulum.TUESDAY),
-            InlineKeyboardButton(_("Wednesday"), callback_data=pendulum.WEDNESDAY),
-        ], [
-            InlineKeyboardButton(_("Thursday"), callback_data=pendulum.THURSDAY),
-            InlineKeyboardButton(_("Friday"), callback_data=pendulum.FRIDAY),
-            InlineKeyboardButton(_("Saturday"), callback_data=pendulum.SATURDAY),
-        ], [
-            InlineKeyboardButton(_("Sunday"), callback_data=pendulum.SUNDAY),
-        ]]
+        wp = await get_weekly_poll(update.effective_chat.id)
 
-        reply_markup = InlineKeyboardMarkup(keyboard)
+        if wp:
+            # weekly poll exists
 
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=_("Day of the week?"),
-            reply_markup=reply_markup
-        )
-        payload = {
-            "weeklypoll": {
-                'field': 'weekday',
-                'chat_id': update.effective_chat.id
+            keyboard = [[
+                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.MONDAY else "") + _("Monday"),
+                                     callback_data=pendulum.MONDAY),
+                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.TUESDAY else "") + _("Tuesday"),
+                                     callback_data=pendulum.TUESDAY),
+                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.WEDNESDAY else "") + _("Wednesday"),
+                                     callback_data=pendulum.WEDNESDAY),
+            ], [
+                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.THURSDAY else "") + _("Thursday"),
+                                     callback_data=pendulum.THURSDAY),
+                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.FRIDAY else "") + _("Friday"),
+                                     callback_data=pendulum.FRIDAY),
+                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.SATURDAY else "") + _("Saturday"),
+                                     callback_data=pendulum.SATURDAY),
+            ], [
+                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.SUNDAY else "") + _("Sunday"),
+                                     callback_data=pendulum.SUNDAY),
+                InlineKeyboardButton("❌ " + _("Remove"), callback_data=-1),
+                InlineKeyboardButton(_("Cancel"), callback_data=0),
+            ]]
+
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=_("Existing weekly poll available. Please select a day to update it or choose remove to stop it."),
+                reply_markup=reply_markup
+            )
+            payload = {
+                "weeklypoll": {
+                    'field': 'weekday',
+                    'chat_id': update.effective_chat.id
+                }
             }
-        }
-        context.bot_data.update(payload)
+            context.bot_data.update(payload)
+        else:
+            keyboard = [[
+                InlineKeyboardButton(_("Monday"), callback_data=pendulum.MONDAY),
+                InlineKeyboardButton(_("Tuesday"), callback_data=pendulum.TUESDAY),
+                InlineKeyboardButton(_("Wednesday"), callback_data=pendulum.WEDNESDAY),
+            ], [
+                InlineKeyboardButton(_("Thursday"), callback_data=pendulum.THURSDAY),
+                InlineKeyboardButton(_("Friday"), callback_data=pendulum.FRIDAY),
+                InlineKeyboardButton(_("Saturday"), callback_data=pendulum.SATURDAY),
+            ], [
+                InlineKeyboardButton(_("Sunday"), callback_data=pendulum.SUNDAY),
+            ]]
+
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=_("Day of the week?"),
+                reply_markup=reply_markup
+            )
+            payload = {
+                "weeklypoll": {
+                    'field': 'weekday',
+                    'chat_id': update.effective_chat.id
+                }
+            }
+            context.bot_data.update(payload)
     # await update.message.reply_text("Please choose:", reply_markup=reply_markup)
 
 

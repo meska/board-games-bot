@@ -1,7 +1,11 @@
 import pendulum
+from asgiref.sync import async_to_sync
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from telegram import Bot
 
 from boardgamesbot.decorators import database_sync_to_async
 
@@ -28,7 +32,7 @@ class WeeklyPoll(models.Model):
     poll_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
-        return self.chat_id
+        return f"{self.chat_id} - {self.weekday}"
 
 
 @receiver(post_save, sender=WeeklyPoll, dispatch_uid='_save')
@@ -56,4 +60,22 @@ def new_weekly_poll(chat_id: int, weekday: int):
 
 @database_sync_to_async
 def get_weekly_poll(chat_id: int):
-    return Poll.objects.filter(chat_id=chat_id).first()
+    try:
+        return WeeklyPoll.objects.get(chat_id=chat_id)
+    except ObjectDoesNotExist:
+        return None
+
+
+@database_sync_to_async
+def delete_weekly_poll(chat_id: int):
+    try:
+        wp = WeeklyPoll.objects.get(chat_id=chat_id)
+
+        if wp.message_id:
+            bot = Bot(settings.TELEGRAM_TOKEN)
+            async_to_sync(bot.stop_poll)(wp.chat_id, wp.message_id)
+            async_to_sync(bot.unpin_chat_message)(wp.chat_id, wp.message_id)
+
+        wp.delete()
+    except ObjectDoesNotExist:
+        return None

@@ -1,11 +1,10 @@
 import os
 from distutils.version import LooseVersion
-from time import sleep
-
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import BaseCommand
 from django.utils.version import get_version
 from django_rq import get_scheduler
+from time import sleep
 
 try:
     from rq_scheduler.utils import setup_loghandlers
