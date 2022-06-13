@@ -5,6 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django_rq import get_queue
 from telegram import Bot
 
 from boardgamesbot.decorators import database_sync_to_async
@@ -26,6 +27,7 @@ class Poll(models.Model):
 
 
 class WeeklyPoll(models.Model):
+    poll_id = models.BigIntegerField(null=True, blank=True)
     chat_id = models.BigIntegerField(unique=True)
     message_id = models.BigIntegerField(null=True, blank=True)
     weekday = models.IntegerField(null=True, blank=True)
@@ -38,7 +40,9 @@ class WeeklyPoll(models.Model):
 @receiver(post_save, sender=WeeklyPoll, dispatch_uid='_save')
 def weekly_poll_save(instance, **kwargs):
     from polls.tasks import update_weekly_poll
-    update_weekly_poll.delay(instance.id)
+    job_id = f"update_weekly_poll_{instance.chat_id}"
+    if not get_queue().fetch_job(job_id):
+        update_weekly_poll.delay(instance.id, job_id=job_id)
 
 
 @database_sync_to_async

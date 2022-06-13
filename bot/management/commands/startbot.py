@@ -3,9 +3,9 @@ import logging
 from django.conf import settings
 from django.core.management import BaseCommand
 # noinspection PyUnresolvedReferences
-from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler
+from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, PollAnswerHandler
 
-from bot.commands import callBack, poll, roll, start, version, weeklypoll
+from bot.commands import callBack, poll, poll_answer, roll, start, version, weeklypoll
 
 logger = logging.getLogger(f'gamebot.{__name__}')
 
@@ -32,6 +32,7 @@ class Command(BaseCommand):
         bot.add_handler(CommandHandler('weeklypoll', weeklypoll))
         bot.add_handler(CommandHandler('version', version))
         bot.add_handler(CommandHandler('roll', roll))
+        bot.add_handler(PollAnswerHandler(poll_answer))
         bot.add_handler(CallbackQueryHandler(callBack))
 
         # Start Bot

@@ -169,15 +169,22 @@ async def version(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None
 
 async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """Roll a dice for every user on the current poll"""
-    from toml import load
-    toml_file = load(os.path.join(settings.BASE_DIR, 'pyproject.toml'))
 
-    print(toml_file)
+    wp = await get_weekly_poll(update.effective_chat.id)
+    if not wp or not wp.message_id:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=_("No weekly poll available")
+        )
+        return
 
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=f"{toml_file.get('tool').get('poetry').get('description')}\nVersion {toml_file.get('tool').get('poetry').get('version')}"
-    )
+    # get poll users
+
+
+async def poll_answer(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+    """User answers a poll"""
+
+    print(update.poll_answer.to_json())
 
 
 async def poll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
