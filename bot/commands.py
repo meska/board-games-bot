@@ -1,4 +1,6 @@
+import os
 import pendulum
+from django.conf import settings
 from django.utils import translation
 from django.utils.translation import gettext as _
 from munch import munchify
@@ -76,6 +78,32 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
         }
         context.bot_data.update(payload)
     # await update.message.reply_text("Please choose:", reply_markup=reply_markup)
+
+
+async def version(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+    """Sends the version of the bot"""
+    from toml import load
+    toml_file = load(os.path.join(settings.BASE_DIR, 'pyproject.toml'))
+
+    print(toml_file)
+
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=f"{toml_file.get('tool').get('poetry').get('description')}\nVersion {toml_file.get('tool').get('poetry').get('version')}"
+    )
+
+
+async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+    """Roll a dice for every user on the current poll"""
+    from toml import load
+    toml_file = load(os.path.join(settings.BASE_DIR, 'pyproject.toml'))
+
+    print(toml_file)
+
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=f"{toml_file.get('tool').get('poetry').get('description')}\nVersion {toml_file.get('tool').get('poetry').get('version')}"
+    )
 
 
 async def poll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:

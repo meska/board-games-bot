@@ -13,7 +13,7 @@ logger = logging.getLogger(f'gamebot.{__name__}')
 @job
 def update_weekly_poll(poll_id):
     from polls.models import WeeklyPoll
-    logger.debug(f'update_weekly_poll({poll_id})')
+    logger.debug(f'start update_weekly_poll({poll_id})')
     wp = WeeklyPoll.objects.get(id=poll_id)
     diff = pendulum.now().date().diff(wp.poll_date, False).days
     bot = Bot(settings.TELEGRAM_TOKEN)
@@ -45,10 +45,13 @@ def update_weekly_poll(poll_id):
         updated = True
 
     if updated:
+        logger.debug(f'update_weekly_poll({poll_id})')
         WeeklyPoll.objects.filter(id=poll_id).update(
             message_id=wp.message_id,
             poll_date=wp.poll_date
         )
+    else:
+        logger.debug(f'update_weekly_poll({poll_id}) - nothing to do')
 
 
 @job
@@ -58,7 +61,7 @@ def sync_polls():
     :return:
     :rtype:
     """
-    print('Updating weekly poll...')
+    logger.debug('sync_polls() started')
     from polls.models import WeeklyPoll
     for wp in WeeklyPoll.objects.all():
         update_weekly_poll.delay(wp.id)
