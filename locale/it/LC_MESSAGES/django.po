@@ -28,14 +28,10 @@ msgstr ""
 "Devi essere un amministratore di questo canale per usare questa funzione."
 
 #: bot/commands.py:73
-#, fuzzy
-#| msgid "Weekly poll updated"
 msgid "Weekly poll not updated"
 msgstr "Sondaggio settimanale aggiornato"
 
 #: bot/commands.py:83
-#, fuzzy
-#| msgid "Weekly poll updated"
 msgid "Weekly poll deleted"
 msgstr "Sondaggio settimanale aggiornato"
 
@@ -108,8 +104,6 @@ msgid "Day of the week?"
 msgstr "Giorno della settimana?"
 
 #: bot/commands.py:207 bot/commands.py:238
-#, fuzzy
-#| msgid "Weekly poll saved"
 msgid "No weekly poll available"
 msgstr "Sondaggio settimanale salvato"
 
@@ -118,7 +112,6 @@ msgid "No users participating in the weekly poll, try later"
 msgstr "Nessun utente partecipa al sondaggio settimanale, riprova più tardi"
 
 #: bot/commands.py:222
-#, python-brace-format
 msgid ""
 "Choosing an user from these:\n"
 "\n"
