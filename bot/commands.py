@@ -12,13 +12,14 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ChatAction
 from telegram.ext import CallbackContext
 
-from polls.models import delete_weekly_poll, get_weekly_poll, get_wp_partecipating_users, new_weekly_poll, \
+from polls.models import cru_update_weekly_poll, delete_weekly_poll, get_weekly_poll, get_wp_partecipating_users, \
     update_poll_answer
 
 logger = logging.getLogger(f'gamebot.{__name__}')
 
 
 async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
+    translation.activate(update.effective_user.language_code)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=_("Welcome to Game Night Bot!"))
 
     await context.bot.set_my_commands((
@@ -29,7 +30,7 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
     ))
 
 
-async def callBack(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+async def handle_query_callback(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """Parses the CallbackQuery and updates the message text."""
     query = update.callback_query
 
@@ -39,23 +40,27 @@ async def callBack(update: Update, context: CallbackContext.DEFAULT_TYPE) -> Non
 
     if context.bot_data.get('weeklypoll'):
         await weeklypoll(update, context)
+    else:
+        # context gone, delete the message
+        await query.message.delete()
 
 
 async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """Manages weekly polls"""
-
+    translation.activate(update.effective_user.language_code)
     # check if user is channel admin
     if update.effective_chat.id < 0:
         # checks only for grups
         admins = await update.effective_chat.get_administrators()
         if update.effective_user.id not in [admin.user.id for admin in admins]:
-            await context.bot.send_message(
+            warning_msg = await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=_("You must be an administrator of this channel to use this feature.")
             )
+            await sleep(3)
+            await warning_msg.delete()
             return
 
-    translation.activate(update.effective_user.language_code)
     if update.callback_query:
         query = update.callback_query
         payload = munchify(context.bot_data)
@@ -82,7 +87,13 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
                 await query.message.delete()
             else:
                 # save weekly poll
-                new = await new_weekly_poll(update.effective_chat.id, int(query.data))
+                new = await cru_update_weekly_poll(
+                    chat_id=update.effective_chat.id,
+                    weekday=int(query.data),
+                    lang=update.effective_user.language_code,
+                    question_prefix=_('Game Night'),
+                    answers=[_('Yes'), _('No')]
+                )
                 if new:
                     await query.edit_message_text(
                         text=_("Weekly poll saved")
@@ -180,6 +191,7 @@ async def version(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None
     )
 
 
+# noinspection PyUnusedLocal
 async def handle_dice(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """Handles dice rolls"""
     print(update.effective_chat.id)
@@ -187,21 +199,33 @@ async def handle_dice(update: Update, context: CallbackContext.DEFAULT_TYPE) -> 
 
 async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """Roll a dice for every user on the current poll"""
-
+    translation.activate(update.effective_user.language_code)
     wp = await get_weekly_poll(update.effective_chat.id)
     if not wp or not wp.message_id:
-        await context.bot.send_message(
+        msg = await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=_("No weekly poll available")
         )
+        await sleep(3)
+        await msg.delete()
+        return
     users = await get_wp_partecipating_users(wp.id)  # get poll users
-
+    if not users:
+        msg = await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=_("No users participating in the weekly poll, try later")
+        )
+        await sleep(3)
+        await msg.delete()
+        return
     userstable = "\n".join([user['user_name'] for user in users])
-    msg = await context.bot.send_message(update.effective_chat.id, _(f"Choosing an user from:\n\n{userstable}"))
+    msg = await context.bot.send_message(update.effective_chat.id, _(f"Choosing an user from these:\n\n{userstable}"))
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
     await sleep(2)
     winner = randint(0, len(users) - 1)
     await msg.edit_text(text=_(f"I choose {users[winner]['user_name']}!"))
+    await sleep(30)
+    await msg.delete()
 
 
 async def roll_deprecated(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
@@ -234,9 +258,17 @@ async def roll_deprecated(update: Update, context: CallbackContext.DEFAULT_TYPE)
     await context.bot.send_message(update.effective_chat.id, f"{winner_user['user_name']} wins!")
 
 
+# noinspection PyUnusedLocal
 async def poll_answer(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """User answers a poll"""
-    name = update.poll_answer.user.first_name if update.poll_answer.user.first_name else update.poll_answer.user.username if update.poll_answer.user.username else None
+
+    if update.poll_answer.user.first_name:
+        name = update.poll_answer.user.first_name
+    elif update.poll_answer.user.username:
+        name = update.poll_answer.user.username
+    else:
+        name = "Unknown"
+
     await update_poll_answer(
         poll_id=update.poll_answer.poll_id,
         user_id=update.poll_answer.user.id,

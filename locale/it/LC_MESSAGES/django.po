@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-06-11 16:41+0000\n"
+"POT-Creation-Date: 2022-06-13 22:51+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,54 +18,120 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: bot/commands.py:40
-msgid "Weekly poll saved"
-msgstr "Sondaggio settimanale salvato"
-
-#: bot/commands.py:45
-msgid "Weekly poll updated"
-msgstr "Sondaggio settimanale aggiornato"
-
-#: bot/commands.py:53
-msgid "Monday"
-msgstr "Lunedì"
-
-#: bot/commands.py:54
-msgid "Tuesday"
-msgstr "Martedì"
-
-#: bot/commands.py:55
-msgid "Wednesday"
-msgstr "Mercoledì"
-
-#: bot/commands.py:57
-msgid "Thursday"
-msgstr "Giovedì"
+#: bot/commands.py:23
+msgid "Welcome to Game Night Bot!"
+msgstr ""
 
 #: bot/commands.py:58
-msgid "Friday"
-msgstr "Venerdì"
+msgid "You must be an administrator of this channel to use this feature."
+msgstr ""
+"Devi essere un amministratore di questo canale per usare questa funzione."
 
-#: bot/commands.py:59
-msgid "Saturday"
-msgstr "Sabato"
+#: bot/commands.py:73
+#, fuzzy
+#| msgid "Weekly poll updated"
+msgid "Weekly poll not updated"
+msgstr "Sondaggio settimanale aggiornato"
 
-#: bot/commands.py:61
-msgid "Sunday"
-msgstr "Domenica"
+#: bot/commands.py:83
+#, fuzzy
+#| msgid "Weekly poll updated"
+msgid "Weekly poll deleted"
+msgstr "Sondaggio settimanale aggiornato"
 
-#: bot/commands.py:65
-msgid "Day of the week?"
-msgstr "Giorno della settimana?"
+#: bot/commands.py:94
+msgid "Game Night"
+msgstr "Serata Giochi"
 
-#: bot/commands.py:83 polls/tasks.py:41
+#: bot/commands.py:95 bot/commands.py:283 polls/models.py:53
 msgid "Yes"
 msgstr "Sì"
 
-#: bot/commands.py:83 polls/tasks.py:41
+#: bot/commands.py:95 bot/commands.py:283 polls/models.py:53
 msgid "No"
 msgstr "No"
 
-#: bot/commands.py:84
+#: bot/commands.py:99
+msgid "Weekly poll saved"
+msgstr "Sondaggio settimanale salvato"
+
+#: bot/commands.py:103
+msgid "Weekly poll updated"
+msgstr "Sondaggio settimanale aggiornato"
+
+#: bot/commands.py:117 bot/commands.py:153
+msgid "Monday"
+msgstr "Lunedì"
+
+#: bot/commands.py:119 bot/commands.py:154
+msgid "Tuesday"
+msgstr "Martedì"
+
+#: bot/commands.py:121 bot/commands.py:155
+msgid "Wednesday"
+msgstr "Mercoledì"
+
+#: bot/commands.py:124 bot/commands.py:157
+msgid "Thursday"
+msgstr "Giovedì"
+
+#: bot/commands.py:126 bot/commands.py:158
+msgid "Friday"
+msgstr "Venerdì"
+
+#: bot/commands.py:128 bot/commands.py:159
+msgid "Saturday"
+msgstr "Sabato"
+
+#: bot/commands.py:131 bot/commands.py:161
+msgid "Sunday"
+msgstr "Domenica"
+
+#: bot/commands.py:133
+msgid "Remove"
+msgstr "Elimina"
+
+#: bot/commands.py:134
+msgid "Cancel"
+msgstr "Annulla"
+
+#: bot/commands.py:141
+msgid ""
+"Existing weekly poll available. Please select a day to update it or choose "
+"remove to stop it."
+msgstr ""
+"Esiste già un sondaggio settimanale. Seleziona un giorno per aggiornarlo "
+"oppure Elimina per cancellarlo."
+
+#: bot/commands.py:168
+msgid "Day of the week?"
+msgstr "Giorno della settimana?"
+
+#: bot/commands.py:207 bot/commands.py:238
+#, fuzzy
+#| msgid "Weekly poll saved"
+msgid "No weekly poll available"
+msgstr "Sondaggio settimanale salvato"
+
+#: bot/commands.py:216
+msgid "No users participating in the weekly poll, try later"
+msgstr "Nessun utente partecipa al sondaggio settimanale, riprova più tardi"
+
+#: bot/commands.py:222
+#, python-brace-format
+msgid ""
+"Choosing an user from these:\n"
+"\n"
+"{userstable}"
+msgstr ""
+"Selezionando un utente tra questi:\n"
+"\n"
+"{userstable}"
+
+#: bot/commands.py:226
+msgid "I choose {users[winner]['user_name']}!"
+msgstr "Ho scelto {users[winner]['user_name']}!"
+
+#: bot/commands.py:284
 msgid "Change Me"
-msgstr "Cambimi"
+msgstr "Cambiami"

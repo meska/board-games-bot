@@ -6,7 +6,7 @@ from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandle
     MessageHandler, PollAnswerHandler, \
     filters
 
-from bot.commands import callBack, handle_dice, poll_answer, roll, start, version, weeklypoll
+from bot.commands import handle_dice, handle_query_callback, poll_answer, roll, start, version, weeklypoll
 
 logger = logging.getLogger(f'gamebot.{__name__}')
 
@@ -33,7 +33,7 @@ class Command(BaseCommand):
         app.add_handler(CommandHandler('version', version))
         app.add_handler(CommandHandler('roll', roll))
         app.add_handler(PollAnswerHandler(poll_answer))
-        app.add_handler(CallbackQueryHandler(callBack))
+        app.add_handler(CallbackQueryHandler(handle_query_callback))
         app.add_handler(MessageHandler(filters.Dice.ALL, handle_dice))
 
         # Start Bot

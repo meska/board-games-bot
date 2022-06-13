@@ -8,6 +8,7 @@ bot: http://t.me/boardgames_bot
 ## Current Features
  
 - Automatic Weekly survey of partecipating players
+- Simple /roll for chose first player
 
 ## Planned Features
 

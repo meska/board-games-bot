@@ -4,6 +4,7 @@ from typing import Optional
 import pendulum
 from asgiref.sync import async_to_sync
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models.signals import post_save
@@ -37,6 +38,9 @@ class WeeklyPoll(models.Model):
     chat_id = models.BigIntegerField(unique=True)
     message_id = models.BigIntegerField(null=True, blank=True)
     weekday = models.IntegerField(null=True, blank=True)
+    language = models.CharField(max_length=5, default='en')
+    question_prefix = models.CharField(max_length=200, default='')
+    answers = ArrayField(models.CharField(max_length=50), default=list)
     poll_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
@@ -71,10 +75,14 @@ def new_poll(message_id, chat_id, question, answers):
 
 
 @database_sync_to_async
-def new_weekly_poll(chat_id: int, weekday: int):
+def cru_update_weekly_poll(chat_id: int, weekday: int, lang: str = 'en', question_prefix: str = '',
+                           answers: dict = []) -> bool:
     db_poll, created = WeeklyPoll.objects.get_or_create(chat_id=chat_id)
+    db_poll.language = lang
     db_poll.weekday = weekday
     db_poll.poll_date = pendulum.now().next(weekday).date()
+    db_poll.question_prefix = question_prefix
+    db_poll.answers = answers
     db_poll.save()
     return created
 
@@ -98,6 +106,7 @@ def update_poll_answer(poll_id: int, user_id: int, answer: [], user_name: str = 
     wa.user_name = user_name
     wa.save()
     logger.info(f"{wa.user_name} answered {wa.get_answer_display()} - {wp.weekday}")
+    return created
 
 
 @database_sync_to_async
@@ -107,7 +116,7 @@ def get_wp_partecipating_users(wp_id: int) -> []:
 
 
 @database_sync_to_async
-def delete_weekly_poll(chat_id: int):
+def delete_weekly_poll(chat_id: int) -> bool:
     try:
         wp = WeeklyPoll.objects.get(chat_id=chat_id)
 
@@ -120,5 +129,6 @@ def delete_weekly_poll(chat_id: int):
                 async_to_sync(Bot(settings.TELEGRAM_TOKEN).delete_message)(wp.chat_id, wp.message_id)
 
         wp.delete()
+        return True
     except ObjectDoesNotExist:
-        return None
+        return False

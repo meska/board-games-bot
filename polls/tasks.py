@@ -3,8 +3,8 @@ import logging
 
 import pendulum
 from django.conf import settings
-from django.utils.translation import gettext as _
 from django_rq import get_queue, job
+from pendulum import Date
 from telegram import Bot
 
 logger = logging.getLogger(f'gamebot.{__name__}')
@@ -21,7 +21,6 @@ async def stop_poll(chat_id, message_id):
     bot = Bot(settings.TELEGRAM_TOKEN)
     await bot.stop_poll(chat_id, message_id)
     await bot.unpin_chat_message(chat_id, message_id)
-    return
 
 
 @job
@@ -53,9 +52,16 @@ def update_weekly_poll(poll_id):
 
     if diff < 7 and not wp.message_id:
         # create the poll on telegram
+        date: Date = pendulum.date(wp.poll_date.year, wp.poll_date.month, wp.poll_date.day)
+        if wp.language == 'en-us':
+            formatted_date = date.format('dddd M/D', wp.language)
+        else:
+            formatted_date = date.format('dddd D/M', wp.language)
+
+        poll_question = f"{wp.question_prefix} {formatted_date.title()}"[0:255]
 
         loop = asyncio.get_event_loop()
-        coroutine = new_poll(wp.chat_id, f"{_('Game Night')} {wp.poll_date.strftime('%A %-d %b')}", [_('Yes'), _('No')])
+        coroutine = new_poll(wp.chat_id, poll_question, wp.answers)
         message_poll_id, message_id = loop.run_until_complete(coroutine)
 
         wp.poll_id = message_poll_id
