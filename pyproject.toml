@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tg-game-bot"
-version = "0.1.1"
+version = "0.1.2"
 description = "Telegram BoardGames Bot"
 authors = ["Marco <meskatech@gmail.com>"]
 
