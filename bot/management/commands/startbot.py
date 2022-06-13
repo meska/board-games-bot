@@ -2,10 +2,11 @@ import logging
 
 from django.conf import settings
 from django.core.management import BaseCommand
-# noinspection PyUnresolvedReferences
-from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, PollAnswerHandler
+from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, \
+    MessageHandler, PollAnswerHandler, \
+    filters
 
-from bot.commands import callBack, poll, poll_answer, roll, start, version, weeklypoll
+from bot.commands import callBack, handle_dice, poll_answer, roll, start, version, weeklypoll
 
 logger = logging.getLogger(f'gamebot.{__name__}')
 
@@ -24,17 +25,17 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         logger.info('Init Bot...')
-        bot = ApplicationBuilder().token(settings.TELEGRAM_TOKEN).build()
+        app = ApplicationBuilder().token(settings.TELEGRAM_TOKEN).build()
 
         # Add commands
-        bot.add_handler(CommandHandler('start', start))
-        bot.add_handler(CommandHandler('poll', poll))
-        bot.add_handler(CommandHandler('weeklypoll', weeklypoll))
-        bot.add_handler(CommandHandler('version', version))
-        bot.add_handler(CommandHandler('roll', roll))
-        bot.add_handler(PollAnswerHandler(poll_answer))
-        bot.add_handler(CallbackQueryHandler(callBack))
+        app.add_handler(CommandHandler('start', start))
+        app.add_handler(CommandHandler('weeklypoll', weeklypoll))
+        app.add_handler(CommandHandler('version', version))
+        app.add_handler(CommandHandler('roll', roll))
+        app.add_handler(PollAnswerHandler(poll_answer))
+        app.add_handler(CallbackQueryHandler(callBack))
+        app.add_handler(MessageHandler(filters.Dice.ALL, handle_dice))
 
         # Start Bot
         logger.info('Starting Bot...')
-        bot.run_polling()
+        app.run_polling()

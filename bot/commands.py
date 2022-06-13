@@ -1,5 +1,7 @@
+import logging
 import os
 from asyncio import sleep
+from random import randint
 
 import pendulum
 from django.conf import settings
@@ -7,13 +9,24 @@ from django.utils import translation
 from django.utils.translation import gettext as _
 from munch import munchify
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.constants import ChatAction
 from telegram.ext import CallbackContext
 
-from polls.models import delete_weekly_poll, get_weekly_poll, new_weekly_poll
+from polls.models import delete_weekly_poll, get_weekly_poll, get_wp_partecipating_users, new_weekly_poll, \
+    update_poll_answer
+
+logger = logging.getLogger(f'gamebot.{__name__}')
 
 
 async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=_("Welcome to Game Night Bot!"))
+
+    await context.bot.set_my_commands((
+        ('start', 'Start'),
+        ('weeklypoll', 'manage a weekly poll'),
+        ('version', 'show version'),
+        ('roll', 'pick a random user')
+    ))
 
 
 async def callBack(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
@@ -167,6 +180,11 @@ async def version(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None
     )
 
 
+async def handle_dice(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+    """Handles dice rolls"""
+    print(update.effective_chat.id)
+
+
 async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """Roll a dice for every user on the current poll"""
 
@@ -176,15 +194,56 @@ async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
             chat_id=update.effective_chat.id,
             text=_("No weekly poll available")
         )
-        return
+    users = await get_wp_partecipating_users(wp.id)  # get poll users
 
-    # get poll users
+    userstable = "\n".join([user['user_name'] for user in users])
+    msg = await context.bot.send_message(update.effective_chat.id, _(f"Choosing an user from:\n\n{userstable}"))
+    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
+    await sleep(2)
+    winner = randint(0, len(users) - 1)
+    await msg.edit_text(text=_(f"I choose {users[winner]['user_name']}!"))
+
+
+async def roll_deprecated(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+    """Roll a dice for every user on the current poll"""
+
+    wp = await get_weekly_poll(update.effective_chat.id)
+    if not wp or not wp.message_id:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=_("No weekly poll available")
+        )
+    users = await get_wp_partecipating_users(wp.id)  # get poll users
+    y = 0
+    for user in users:
+        user['msgname'] = await context.bot.send_message(update.effective_chat.id, f"{user['user_name']}:")
+        user['dice'] = await context.bot.send_dice(update.effective_chat.id)
+        y += 2
+        await sleep(0.1)
+    # wait for animations to finish
+    await sleep(y)
+
+    # show the winner
+    winner_number = 0
+    winner_user = None
+    for user in users:
+        if user['dice'].dice.value > winner_number:
+            winner_number = user['dice'].dice.value
+            winner_user = user
+
+    await context.bot.send_message(update.effective_chat.id, f"{winner_user['user_name']} wins!")
 
 
 async def poll_answer(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """User answers a poll"""
-    # TODO: record answers
-    print(update.poll_answer.to_json())
+    name = update.poll_answer.user.first_name if update.poll_answer.user.first_name else update.poll_answer.user.username if update.poll_answer.user.username else None
+    await update_poll_answer(
+        poll_id=update.poll_answer.poll_id,
+        user_id=update.poll_answer.user.id,
+        answer=update.poll_answer.option_ids,
+        user_name=name
+    )
+    # print(update.poll_answer.to_json())
 
 
 async def poll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:

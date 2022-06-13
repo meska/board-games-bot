@@ -170,10 +170,6 @@ if SENTRY_DSN:
         environment="production" if not DEBUG else "development"
     )
 
-# if DEBUG:
-#     for queueConfig in RQ_QUEUES:
-#         RQ_QUEUES[queueConfig]['ASYNC'] = False
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

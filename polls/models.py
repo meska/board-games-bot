@@ -1,3 +1,6 @@
+import logging
+from typing import Optional
+
 import pendulum
 from asgiref.sync import async_to_sync
 from django.conf import settings
@@ -5,10 +8,13 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils.translation import gettext as _
 from django_rq import get_queue
 from telegram import Bot
 
 from boardgamesbot.decorators import database_sync_to_async
+
+logger = logging.getLogger(f'gamebot.{__name__}')
 
 
 class Poll(models.Model):
@@ -39,19 +45,20 @@ class WeeklyPoll(models.Model):
 
 class WeeklyPollAnswer(models.Model):
     wp = models.ForeignKey(WeeklyPoll, on_delete=models.CASCADE)
-    answer = models.IntegerField()
-    user = models.JSONField(default=dict)
-    answer_date = models.DateTimeField('date answered', auto_created=True)
+    user_id = models.IntegerField()
+    answer = models.IntegerField(null=True, blank=True, choices=((0, _('Yes')), (1, _('No'))))
+    user_name = models.CharField(max_length=200, null=True, blank=True)
+    answer_date = models.DateTimeField('date answered', auto_now=True)
 
     def __str__(self):
-        return f"{self.chat_id} - {self.answer}"
+        return f"{self.wp} - {self.user_id}"
 
 
 @receiver(post_save, sender=WeeklyPoll, dispatch_uid='_save')
 def weekly_poll_save(instance, **kwargs):
     from polls.tasks import update_weekly_poll
     job_id = f"update_weekly_poll_{instance.chat_id}"
-    if not get_queue().fetch_job(job_id):
+    if not get_queue().fetch_job(job_id) or settings.DEBUG:
         update_weekly_poll.delay(instance.id, job_id=job_id)
 
 
@@ -73,11 +80,30 @@ def new_weekly_poll(chat_id: int, weekday: int):
 
 
 @database_sync_to_async
-def get_weekly_poll(chat_id: int):
+def get_weekly_poll(chat_id: int = None, poll_id: int = None) -> Optional[WeeklyPoll]:
     try:
-        return WeeklyPoll.objects.get(chat_id=chat_id)
+        if chat_id:
+            return WeeklyPoll.objects.get(chat_id=chat_id)
+        if poll_id:
+            return WeeklyPoll.objects.get(poll_id=poll_id)
     except ObjectDoesNotExist:
         return None
+
+
+@database_sync_to_async
+def update_poll_answer(poll_id: int, user_id: int, answer: [], user_name: str = None) -> bool:
+    wp = WeeklyPoll.objects.get(poll_id=poll_id)
+    wa, created = WeeklyPollAnswer.objects.get_or_create(wp_id=wp.id, user_id=user_id)
+    wa.answer = answer[0] if answer else None
+    wa.user_name = user_name
+    wa.save()
+    logger.info(f"{wa.user_name} answered {wa.get_answer_display()} - {wp.weekday}")
+
+
+@database_sync_to_async
+def get_wp_partecipating_users(wp_id: int) -> []:
+    wp = WeeklyPoll.objects.get(id=wp_id)
+    return list(wp.weeklypollanswer_set.filter(answer=0).values('user_id', 'user_name'))
 
 
 @database_sync_to_async
