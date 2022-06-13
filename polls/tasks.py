@@ -85,5 +85,8 @@ def sync_polls():
     for wp in WeeklyPoll.objects.all():
         job_id = f"update_weekly_poll_{wp.chat_id}"
         poll_job = get_queue().fetch_job(job_id)
-        if not poll_job or poll_job.is_finished:
+        if not poll_job:
+            update_weekly_poll.delay(wp.id, job_id=job_id)
+        if poll_job and not poll_job.is_queued:
+            poll_job.delete()
             update_weekly_poll.delay(wp.id, job_id=job_id)

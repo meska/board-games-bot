@@ -37,6 +37,16 @@ class WeeklyPoll(models.Model):
         return f"{self.chat_id} - {self.weekday}"
 
 
+class WeeklyPollAnswer(models.Model):
+    wp = models.ForeignKey(WeeklyPoll, on_delete=models.CASCADE)
+    answer = models.IntegerField()
+    user = models.JSONField(default=dict)
+    answer_date = models.DateTimeField('date answered', auto_created=True)
+
+    def __str__(self):
+        return f"{self.chat_id} - {self.answer}"
+
+
 @receiver(post_save, sender=WeeklyPoll, dispatch_uid='_save')
 def weekly_poll_save(instance, **kwargs):
     from polls.tasks import update_weekly_poll

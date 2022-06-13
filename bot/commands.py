@@ -183,7 +183,7 @@ async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
 
 async def poll_answer(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """User answers a poll"""
-
+    # TODO: record answers
     print(update.poll_answer.to_json())
 
 
