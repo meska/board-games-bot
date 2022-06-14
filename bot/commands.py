@@ -22,13 +22,6 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
     translation.activate(update.effective_user.language_code)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=_("Welcome to Game Night Bot!"))
 
-    await context.bot.set_my_commands((
-        ('start', 'Start'),
-        ('weeklypoll', 'manage a weekly poll'),
-        ('version', 'show version'),
-        ('roll', 'pick a random user')
-    ))
-
 
 async def handle_query_callback(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """Parses the CallbackQuery and updates the message text."""
@@ -59,6 +52,7 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
             )
             await sleep(3)
             await warning_msg.delete()
+            await update.message.delete()
             return
 
     if update.callback_query:
@@ -175,6 +169,7 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
                 }
             }
             context.bot_data.update(payload)
+        await update.message.delete()
     # await update.message.reply_text("Please choose:", reply_markup=reply_markup)
 
 
@@ -197,6 +192,12 @@ async def handle_dice(update: Update, context: CallbackContext.DEFAULT_TYPE) -> 
     print(update.effective_chat.id)
 
 
+# noinspection PyUnusedLocal
+async def handle_unwanted(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+    """Message filter ?"""
+    print(update.effective_chat.id)
+
+
 async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """Roll a dice for every user on the current poll"""
     translation.activate(update.effective_user.language_code)
@@ -208,6 +209,7 @@ async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
         )
         await sleep(3)
         await msg.delete()
+        await update.message.delete()
         return
     users = await get_wp_partecipating_users(wp.id)  # get poll users
     if not users:
@@ -217,6 +219,7 @@ async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
         )
         await sleep(3)
         await msg.delete()
+        await update.message.delete()
         return
     userstable = "\n".join([user['user_name'] for user in users])
     msg = await context.bot.send_message(update.effective_chat.id, _(f"Choosing an user from these:\n\n{userstable}"))
@@ -226,6 +229,7 @@ async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     await msg.edit_text(text=_(f"I choose {users[winner]['user_name']}!"))
     await sleep(30)
     await msg.delete()
+    await update.message.delete()
 
 
 async def roll_deprecated(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:

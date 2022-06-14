@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'django_rq',
     'scheduler.apps.SchedulerConfig',
     'polls.apps.PollsConfig',
-    'bot.apps.BotConfig'
+    'bot.apps.BotConfig',
+    'games.apps.GamesConfig'
 ]
 
 MIDDLEWARE = [
