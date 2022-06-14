@@ -4,7 +4,6 @@ from asyncio import sleep
 import pendulum
 from django.utils import translation
 from django.utils.translation import gettext as _
-from munch import munchify
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
@@ -32,48 +31,45 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
 
     if update.callback_query:
         query = update.callback_query
-        payload = munchify(context.bot_data)
+        weekday = query.data.get('data')
 
-        if payload.weeklypoll.field == 'weekday':
-            payload.weeklypoll.weekday = query.data
+        if weekday == 0:
+            await query.edit_message_text(
+                text=_("Weekly poll not updated")
+            )
+            await sleep(5)
+            await query.message.delete()
+            return
 
-            if query.data == '0':
+        await delete_weekly_poll(update.effective_chat.id)
+
+        if weekday == -1:
+            await query.edit_message_text(
+                text=_("Weekly poll deleted")
+            )
+
+            await sleep(5)
+            await query.message.delete()
+        else:
+            # save weekly poll
+            new = await cru_update_weekly_poll(
+                chat_id=update.effective_chat.id,
+                weekday=weekday,
+                lang=update.effective_user.language_code,
+                question_prefix=_('Game Night'),
+                answers=[_('Yes'), _('No')]
+            )
+            if new:
                 await query.edit_message_text(
-                    text=_("Weekly poll not updated")
+                    text=_("Weekly poll saved")
                 )
-                await sleep(5)
-                await query.message.delete()
-                return
-
-            await delete_weekly_poll(update.effective_chat.id)
-
-            if query.data == '-1':
-                await query.edit_message_text(
-                    text=_("Weekly poll deleted")
-                )
-
-                await sleep(5)
-                await query.message.delete()
             else:
-                # save weekly poll
-                new = await cru_update_weekly_poll(
-                    chat_id=update.effective_chat.id,
-                    weekday=int(query.data),
-                    lang=update.effective_user.language_code,
-                    question_prefix=_('Game Night'),
-                    answers=[_('Yes'), _('No')]
+                await query.edit_message_text(
+                    text=_("Weekly poll updated")
                 )
-                if new:
-                    await query.edit_message_text(
-                        text=_("Weekly poll saved")
-                    )
-                else:
-                    await query.edit_message_text(
-                        text=_("Weekly poll updated")
-                    )
 
-                await sleep(5)
-                await query.message.delete()
+            await sleep(5)
+            await query.message.delete()
     else:
         # check existing poll
 
@@ -84,23 +80,23 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
 
             keyboard = [[
                 InlineKeyboardButton(("👉 " if wp.weekday == pendulum.MONDAY else "") + _("Monday"),
-                                     callback_data=pendulum.MONDAY),
+                                     callback_data={'handler': 'weeklypoll', 'data': pendulum.MONDAY}),
                 InlineKeyboardButton(("👉 " if wp.weekday == pendulum.TUESDAY else "") + _("Tuesday"),
-                                     callback_data=pendulum.TUESDAY),
+                                     callback_data={'handler': 'weeklypoll', 'data': pendulum.TUESDAY}),
                 InlineKeyboardButton(("👉 " if wp.weekday == pendulum.WEDNESDAY else "") + _("Wednesday"),
-                                     callback_data=pendulum.WEDNESDAY),
+                                     callback_data={'handler': 'weeklypoll', 'data': pendulum.WEDNESDAY}),
             ], [
                 InlineKeyboardButton(("👉 " if wp.weekday == pendulum.THURSDAY else "") + _("Thursday"),
-                                     callback_data=pendulum.THURSDAY),
+                                     callback_data={'handler': 'weeklypoll', 'data': pendulum.THURSDAY}),
                 InlineKeyboardButton(("👉 " if wp.weekday == pendulum.FRIDAY else "") + _("Friday"),
-                                     callback_data=pendulum.FRIDAY),
+                                     callback_data={'handler': 'weeklypoll', 'data': pendulum.FRIDAY}),
                 InlineKeyboardButton(("👉 " if wp.weekday == pendulum.SATURDAY else "") + _("Saturday"),
-                                     callback_data=pendulum.SATURDAY),
+                                     callback_data={'handler': 'weeklypoll', 'data': pendulum.SATURDAY}),
             ], [
                 InlineKeyboardButton(("👉 " if wp.weekday == pendulum.SUNDAY else "") + _("Sunday"),
-                                     callback_data=pendulum.SUNDAY),
-                InlineKeyboardButton("❌ " + _("Remove"), callback_data=-1),
-                InlineKeyboardButton(_("Cancel"), callback_data=0),
+                                     callback_data={'handler': 'weeklypoll', 'data': pendulum.SUNDAY}),
+                InlineKeyboardButton("❌ " + _("Remove"), callback_data={'handler': 'weeklypoll', 'data': -1}),
+                InlineKeyboardButton(_("Cancel"), callback_data={'handler': 'weeklypoll', 'data': 0}),
             ]]
 
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -110,24 +106,18 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
                 text=_("Existing weekly poll available. Please select a day to update it or choose remove to stop it."),
                 reply_markup=reply_markup
             )
-            payload = {
-                "weeklypoll": {
-                    'field': 'weekday',
-                    'chat_id': update.effective_chat.id
-                }
-            }
-            context.bot_data.update(payload)
         else:
             keyboard = [[
-                InlineKeyboardButton(_("Monday"), callback_data=pendulum.MONDAY),
-                InlineKeyboardButton(_("Tuesday"), callback_data=pendulum.TUESDAY),
-                InlineKeyboardButton(_("Wednesday"), callback_data=pendulum.WEDNESDAY),
+                InlineKeyboardButton(_("Monday"), callback_data={'handler': 'weeklypoll', 'data': pendulum.MONDAY}),
+                InlineKeyboardButton(_("Tuesday"), callback_data={'handler': 'weeklypoll', 'data': pendulum.TUESDAY}),
+                InlineKeyboardButton(_("Wednesday"),
+                                     callback_data={'handler': 'weeklypoll', 'data': pendulum.WEDNESDAY}),
             ], [
-                InlineKeyboardButton(_("Thursday"), callback_data=pendulum.THURSDAY),
-                InlineKeyboardButton(_("Friday"), callback_data=pendulum.FRIDAY),
-                InlineKeyboardButton(_("Saturday"), callback_data=pendulum.SATURDAY),
+                InlineKeyboardButton(_("Thursday"), callback_data={'handler': 'weeklypoll', 'data': pendulum.THURSDAY}),
+                InlineKeyboardButton(_("Friday"), callback_data={'handler': 'weeklypoll', 'data': pendulum.FRIDAY}),
+                InlineKeyboardButton(_("Saturday"), callback_data={'handler': 'weeklypoll', 'data': pendulum.SATURDAY}),
             ], [
-                InlineKeyboardButton(_("Sunday"), callback_data=pendulum.SUNDAY),
+                InlineKeyboardButton(_("Sunday"), callback_data={'handler': 'weeklypoll', 'data': pendulum.SUNDAY}),
             ]]
 
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -137,13 +127,6 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
                 text=_("Day of the week?"),
                 reply_markup=reply_markup
             )
-            payload = {
-                "weeklypoll": {
-                    'field': 'weekday',
-                    'chat_id': update.effective_chat.id
-                }
-            }
-            context.bot_data.update(payload)
         await update.message.delete()
 
 

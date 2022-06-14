@@ -8,7 +8,7 @@ from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandle
     MessageHandler, PollAnswerHandler, \
     filters
 
-from bot.commands import handle_dice, handle_members, handle_query_callback, roll, start, version
+from bot.commands import handle_dice, handle_members, handle_query_callback, handle_replies, roll, start, version
 from games.commands import handle_games
 from polls.commands import poll_answer, weeklypoll
 
@@ -44,7 +44,7 @@ class Command(BaseCommand):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(set_commands())
 
-        app = ApplicationBuilder().token(settings.TELEGRAM_TOKEN).build()
+        app = ApplicationBuilder().token(settings.TELEGRAM_TOKEN).arbitrary_callback_data(True).build()
 
         # Add commands
         app.add_handler(CommandHandler('start', start))
@@ -55,6 +55,7 @@ class Command(BaseCommand):
 
         app.add_handler(PollAnswerHandler(poll_answer))
         app.add_handler(CallbackQueryHandler(handle_query_callback))
+        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_replies))
         app.add_handler(MessageHandler(filters.Dice.ALL, handle_dice))
         app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_members))
         app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, handle_members))

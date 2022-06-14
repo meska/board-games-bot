@@ -39,3 +39,11 @@ def left_chat_user(chat: telegram.Chat, user: telegram.User) -> bool:
     c, created = Chat.objects.get_or_create(chat_id=chat.id, chat_title=chat.title)
     GroupMember.objects.filter(chat=c, user_id=user.id).delete()
     return True
+
+
+@database_sync_to_async
+def my_groups(user_id: int) -> bool:
+    """
+    Return a list of groups the user is in
+    """
+    return list(GroupMember.objects.filter(user_id=user_id).values_list('chat__chat_id', 'chat__chat_title'))

@@ -8,7 +8,7 @@ from django.utils import translation
 from django.utils.translation import gettext as _
 from telegram import Update
 from telegram.constants import ChatAction
-from telegram.ext import CallbackContext
+from telegram.ext import CallbackContext, InvalidCallbackData
 
 from bot.models import left_chat_user, new_chat_user
 from polls.models import get_weekly_poll, get_wp_partecipating_users
@@ -18,7 +18,11 @@ logger = logging.getLogger(f'gamebot.{__name__}')
 
 async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
     translation.activate(update.effective_user.language_code)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=_("Welcome to Game Night Bot!"))
+    if context.args and context.args[0] == "games":
+        from games.commands import handle_games
+        await handle_games(update, context)
+    else:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=_("Welcome to Game Night Bot!"))
 
 
 async def handle_query_callback(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
@@ -31,9 +35,32 @@ async def handle_query_callback(update: Update, context: CallbackContext.DEFAULT
     # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
     await query.answer()
 
-    if context.bot_data.get('weeklypoll'):
+    if isinstance(query.data, InvalidCallbackData):
+        await query.message.delete()
+        return
+    if query.data.get('handler') == 'weeklypoll':
         from polls.commands import weeklypoll
         await weeklypoll(update, context)
+    elif query.data.get('handler') == 'games':
+        from games.commands import handle_games
+        await handle_games(update, context)
+    else:
+        # context gone, delete the message
+        await query.message.delete()
+
+
+async def handle_replies(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+    """
+        Reply router
+    """
+    query = update.callback_query
+    if not query or isinstance(query.data, InvalidCallbackData):
+        await query.message.delete()
+        return
+
+    if query.data.get('handler') == 'games':
+        from games.commands import handle_games
+        await handle_games(update, context)
     else:
         # context gone, delete the message
         await query.message.delete()
@@ -79,7 +106,6 @@ async def handle_members(update: Update, context: CallbackContext.DEFAULT_TYPE) 
         # add user to the list of channel members
         logger.info(f"User {member.id} joined the channel")
         await new_chat_user(update.message.chat, member)
-
 
 
 async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:

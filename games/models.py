@@ -1,8 +1,10 @@
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
-
 # Create your models here.
+from boardgamesbot.decorators import database_sync_to_async
+
+
 class Game(models.Model):
     """
     Game model to keep a cache of bgg games
@@ -27,7 +29,8 @@ class GroupGame(models.Model):
     chat_id = models.BigIntegerField()
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     owned_by = ArrayField(models.IntegerField(), default=list)  # Users who own the game
-    in_place = models.BooleanField(default=False)  # True if the game stays always in the room, false if the owner keep it with him
+    in_place = models.BooleanField(
+        default=False)  # True if the game stays always in the room, false if the owner keep it with him
     last_updated = models.DateTimeField(auto_now=True)
 
 
@@ -50,3 +53,20 @@ class PlayScore(models.Model):
     user_name = models.CharField(max_length=255)
     score = models.IntegerField()
     last_updated = models.DateTimeField(auto_now=True)
+
+
+class UserGame(models.Model):
+    """
+    UserGame model to keep games owned by a user
+    """
+    user_id = models.BigIntegerField()
+    game = models.ForeignKey(Game, on_delete=models.CASCADE)
+    last_updated = models.DateTimeField(auto_now=True)
+
+
+@database_sync_to_async
+def my_games(user_id: int) -> list:
+    """
+    Return a list of groups the user is in
+    """
+    return list(UserGame.objects.filter(user_id=user_id).values_list('game_id', 'game__name'))
