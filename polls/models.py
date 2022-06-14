@@ -18,21 +18,6 @@ from boardgamesbot.decorators import database_sync_to_async
 logger = logging.getLogger(f'gamebot.{__name__}')
 
 
-class Poll(models.Model):
-    message_id = models.BigIntegerField()
-    chat_id = models.BigIntegerField()
-    pinned = models.BooleanField(default=False)
-    question = models.CharField(max_length=200)
-    answers = models.JSONField(default=dict)
-    pub_date = models.DateTimeField('date published', auto_now_add=True)
-
-    class Meta:
-        unique_together = ('message_id', 'chat_id')
-
-    def __str__(self):
-        return self.question
-
-
 class WeeklyPoll(models.Model):
     poll_id = models.BigIntegerField(null=True, blank=True)
     chat_id = models.BigIntegerField(unique=True)
@@ -67,14 +52,6 @@ def weekly_poll_save(instance, **kwargs):
 
 
 @database_sync_to_async
-def new_poll(message_id, chat_id, question, answers):
-    db_poll = Poll(
-        message_id=message_id, chat_id=chat_id, question=question, answers=answers,
-        pinned=True)
-    return db_poll.save()
-
-
-@database_sync_to_async
 def cru_update_weekly_poll(chat_id: int, weekday: int, lang: str = 'en', question_prefix: str = '',
                            answers: dict = []) -> bool:
     db_poll, created = WeeklyPoll.objects.get_or_create(chat_id=chat_id)
@@ -106,6 +83,10 @@ def update_poll_answer(poll_id: int, user_id: int, answer: [], user_name: str = 
     wa.user_name = user_name
     wa.save()
     logger.info(f"{wa.user_name} answered {wa.get_answer_display()} - {wp.weekday}")
+
+    from bot.tasks import new_chat_user_task
+    new_chat_user_task.delay(wp.chat_id, user_id, user_name)
+
     return created
 
 

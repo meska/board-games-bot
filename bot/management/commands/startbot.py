@@ -8,8 +8,9 @@ from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandle
     MessageHandler, PollAnswerHandler, \
     filters
 
-from bot.commands import handle_dice, handle_query_callback, poll_answer, roll, start, version, \
-    weeklypoll
+from bot.commands import handle_dice, handle_members, handle_query_callback, roll, start, version
+from games.commands import handle_games
+from polls.commands import poll_answer, weeklypoll
 
 logger = logging.getLogger(f'gamebot.{__name__}')
 
@@ -20,7 +21,8 @@ async def set_commands():
         ('start', 'Start'),
         ('weeklypoll', 'manage a weekly poll'),
         ('version', 'show version'),
-        ('roll', 'pick a random user')
+        ('roll', 'pick a random user'),
+        # ('game', 'manage games'),
     ])
 
 
@@ -49,9 +51,13 @@ class Command(BaseCommand):
         app.add_handler(CommandHandler('weeklypoll', weeklypoll))
         app.add_handler(CommandHandler('version', version))
         app.add_handler(CommandHandler('roll', roll))
+        app.add_handler(CommandHandler('games', handle_games))
+
         app.add_handler(PollAnswerHandler(poll_answer))
         app.add_handler(CallbackQueryHandler(handle_query_callback))
         app.add_handler(MessageHandler(filters.Dice.ALL, handle_dice))
+        app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_members))
+        app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, handle_members))
         # app.add_handler(MessageHandler(filters.ALL, handle_unwanted))
 
         # Start Bot

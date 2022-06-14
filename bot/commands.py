@@ -3,17 +3,15 @@ import os
 from asyncio import sleep
 from random import randint
 
-import pendulum
 from django.conf import settings
 from django.utils import translation
 from django.utils.translation import gettext as _
-from munch import munchify
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Update
 from telegram.constants import ChatAction
 from telegram.ext import CallbackContext
 
-from polls.models import cru_update_weekly_poll, delete_weekly_poll, get_weekly_poll, get_wp_partecipating_users, \
-    update_poll_answer
+from bot.models import left_chat_user, new_chat_user
+from polls.models import get_weekly_poll, get_wp_partecipating_users
 
 logger = logging.getLogger(f'gamebot.{__name__}')
 
@@ -24,7 +22,9 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
 
 
 async def handle_query_callback(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
-    """Parses the CallbackQuery and updates the message text."""
+    """
+        Query Callback router
+    """
     query = update.callback_query
 
     # CallbackQueries need to be answered, even if no notification to the user is needed
@@ -32,145 +32,11 @@ async def handle_query_callback(update: Update, context: CallbackContext.DEFAULT
     await query.answer()
 
     if context.bot_data.get('weeklypoll'):
+        from polls.commands import weeklypoll
         await weeklypoll(update, context)
     else:
         # context gone, delete the message
         await query.message.delete()
-
-
-async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
-    """Manages weekly polls"""
-    translation.activate(update.effective_user.language_code)
-    # check if user is channel admin
-    if update.effective_chat.id < 0:
-        # checks only for grups
-        admins = await update.effective_chat.get_administrators()
-        if update.effective_user.id not in [admin.user.id for admin in admins]:
-            warning_msg = await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=_("You must be an administrator of this channel to use this feature.")
-            )
-            await sleep(3)
-            await warning_msg.delete()
-            await update.message.delete()
-            return
-
-    if update.callback_query:
-        query = update.callback_query
-        payload = munchify(context.bot_data)
-
-        if payload.weeklypoll.field == 'weekday':
-            payload.weeklypoll.weekday = query.data
-
-            if query.data == '0':
-                await query.edit_message_text(
-                    text=_("Weekly poll not updated")
-                )
-                await sleep(5)
-                await query.message.delete()
-                return
-
-            await delete_weekly_poll(update.effective_chat.id)
-
-            if query.data == '-1':
-                await query.edit_message_text(
-                    text=_("Weekly poll deleted")
-                )
-
-                await sleep(5)
-                await query.message.delete()
-            else:
-                # save weekly poll
-                new = await cru_update_weekly_poll(
-                    chat_id=update.effective_chat.id,
-                    weekday=int(query.data),
-                    lang=update.effective_user.language_code,
-                    question_prefix=_('Game Night'),
-                    answers=[_('Yes'), _('No')]
-                )
-                if new:
-                    await query.edit_message_text(
-                        text=_("Weekly poll saved")
-                    )
-                else:
-                    await query.edit_message_text(
-                        text=_("Weekly poll updated")
-                    )
-
-                await sleep(5)
-                await query.message.delete()
-    else:
-        # check existing poll
-
-        wp = await get_weekly_poll(update.effective_chat.id)
-
-        if wp:
-            # weekly poll exists
-
-            keyboard = [[
-                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.MONDAY else "") + _("Monday"),
-                                     callback_data=pendulum.MONDAY),
-                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.TUESDAY else "") + _("Tuesday"),
-                                     callback_data=pendulum.TUESDAY),
-                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.WEDNESDAY else "") + _("Wednesday"),
-                                     callback_data=pendulum.WEDNESDAY),
-            ], [
-                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.THURSDAY else "") + _("Thursday"),
-                                     callback_data=pendulum.THURSDAY),
-                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.FRIDAY else "") + _("Friday"),
-                                     callback_data=pendulum.FRIDAY),
-                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.SATURDAY else "") + _("Saturday"),
-                                     callback_data=pendulum.SATURDAY),
-            ], [
-                InlineKeyboardButton(("👉 " if wp.weekday == pendulum.SUNDAY else "") + _("Sunday"),
-                                     callback_data=pendulum.SUNDAY),
-                InlineKeyboardButton("❌ " + _("Remove"), callback_data=-1),
-                InlineKeyboardButton(_("Cancel"), callback_data=0),
-            ]]
-
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=_("Existing weekly poll available. Please select a day to update it or choose remove to stop it."),
-                reply_markup=reply_markup
-            )
-            payload = {
-                "weeklypoll": {
-                    'field': 'weekday',
-                    'chat_id': update.effective_chat.id
-                }
-            }
-            context.bot_data.update(payload)
-        else:
-            keyboard = [[
-                InlineKeyboardButton(_("Monday"), callback_data=pendulum.MONDAY),
-                InlineKeyboardButton(_("Tuesday"), callback_data=pendulum.TUESDAY),
-                InlineKeyboardButton(_("Wednesday"), callback_data=pendulum.WEDNESDAY),
-            ], [
-                InlineKeyboardButton(_("Thursday"), callback_data=pendulum.THURSDAY),
-                InlineKeyboardButton(_("Friday"), callback_data=pendulum.FRIDAY),
-                InlineKeyboardButton(_("Saturday"), callback_data=pendulum.SATURDAY),
-            ], [
-                InlineKeyboardButton(_("Sunday"), callback_data=pendulum.SUNDAY),
-            ]]
-
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=_("Day of the week?"),
-                reply_markup=reply_markup
-            )
-            payload = {
-                "weeklypoll": {
-                    'field': 'weekday',
-                    'chat_id': update.effective_chat.id
-                }
-            }
-            context.bot_data.update(payload)
-        await update.message.delete()
-    # await update.message.reply_text("Please choose:", reply_markup=reply_markup)
 
 
 async def version(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
@@ -196,6 +62,24 @@ async def handle_dice(update: Update, context: CallbackContext.DEFAULT_TYPE) -> 
 async def handle_unwanted(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """Message filter ?"""
     print(update.effective_chat.id)
+
+
+# noinspection PyUnusedLocal
+async def handle_members(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+    """Keep track of members"""
+
+    user_left = update.message.left_chat_member
+    if user_left:
+        # remove user from the list of channel members
+        logger.info(f"User {user_left.id} left the channel")
+        await left_chat_user(update.message.chat, user_left)
+
+    new_chat_members = update.message.new_chat_members
+    for member in new_chat_members:
+        # add user to the list of channel members
+        logger.info(f"User {member.id} joined the channel")
+        await new_chat_user(update.message.chat, member)
+
 
 
 async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
@@ -260,50 +144,3 @@ async def roll_deprecated(update: Update, context: CallbackContext.DEFAULT_TYPE)
             winner_user = user
 
     await context.bot.send_message(update.effective_chat.id, f"{winner_user['user_name']} wins!")
-
-
-# noinspection PyUnusedLocal
-async def poll_answer(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
-    """User answers a poll"""
-
-    if update.poll_answer.user.first_name:
-        name = update.poll_answer.user.first_name
-    elif update.poll_answer.user.username:
-        name = update.poll_answer.user.username
-    else:
-        name = "Unknown"
-
-    await update_poll_answer(
-        poll_id=update.poll_answer.poll_id,
-        user_id=update.poll_answer.user.id,
-        answer=update.poll_answer.option_ids,
-        user_name=name
-    )
-    # print(update.poll_answer.to_json())
-
-
-async def poll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
-    """Sends a predefined poll"""
-    answers = [_("Yes"), _("No")]
-    question = _("Change Me")
-    message = await context.bot.send_poll(
-        update.effective_chat.id,
-        question,
-        answers,
-        is_anonymous=False,
-        allows_multiple_answers=False,
-    )
-
-    await message.pin()
-    from polls.models import new_poll
-    await new_poll(message.message_id, update.effective_chat.id, question, answers)
-
-    payload = {
-        message.poll.id: {
-            "question": question,
-            "message_id": message.message_id,
-            "chat_id": update.effective_chat.id,
-            "answers": 0,
-        }
-    }
-    context.bot_data.update(payload)
