@@ -67,5 +67,4 @@ async def handle_games(update: Update, context: CallbackContext.DEFAULT_TYPE) ->
                 update.effective_chat.id,
                 _("Please enter the name of the game or BGG ID:"),
                 reply_markup=ForceReply(selective=True)
-                , callback_data={'handler': 'games', 'data': 'add_game'}
             )
