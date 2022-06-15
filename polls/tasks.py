@@ -57,14 +57,12 @@ def update_weekly_poll(poll_id):
     if diff < 7 and not wp.message_id:
         # create the poll on telegram
         date: Date = pendulum.date(wp.poll_date.year, wp.poll_date.month, wp.poll_date.day)
-        if wp.language == 'en-us':
-            formatted_date = date.format('dddd M/D', wp.language)
-        else:
-            try:
-                formatted_date = date.format('dddd D/M', wp.language)
-            except ValueError:
-                # fallback to english
-                formatted_date = date.format('dddd D/M', 'en-us')
+
+        try:
+            formatted_date = date.format('dddd D/M', wp.language)
+        except ValueError:
+            # fallback to english
+            formatted_date = date.format('dddd D/M', 'en')
 
         poll_question = f"{wp.question_prefix} {formatted_date.title()}"[0:255]
 
