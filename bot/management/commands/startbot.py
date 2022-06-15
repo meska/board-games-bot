@@ -9,7 +9,7 @@ from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandle
     filters
 
 from bot.commands import handle_dice, handle_members, handle_query_callback, handle_replies, roll, start, version
-from games.commands import handle_games
+from games.commands import add_game, del_game, list_games
 from polls.commands import poll_answer, weeklypoll
 
 logger = logging.getLogger(f'gamebot.{__name__}')
@@ -22,7 +22,9 @@ async def set_commands():
         ('weeklypoll', 'manage a weekly poll'),
         ('version', 'show version'),
         ('roll', 'pick a random user'),
-        # ('game', 'manage games'),
+        ('add', 'add game to your collection'),
+        ('list', 'list your games or group games'),
+        ('del', 'remove a game from your collection'),
     ])
 
 
@@ -51,7 +53,9 @@ class Command(BaseCommand):
         app.add_handler(CommandHandler('weeklypoll', weeklypoll))
         app.add_handler(CommandHandler('version', version))
         app.add_handler(CommandHandler('roll', roll))
-        app.add_handler(CommandHandler('games', handle_games))
+        app.add_handler(CommandHandler('add', add_game,))
+        app.add_handler(CommandHandler('del', del_game, ))
+        app.add_handler(CommandHandler('list', list_games))
 
         app.add_handler(PollAnswerHandler(poll_answer))
         app.add_handler(CallbackQueryHandler(handle_query_callback))

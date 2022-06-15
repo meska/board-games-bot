@@ -12,6 +12,7 @@ from django.dispatch import receiver
 from django.utils.translation import gettext as _
 from django_rq import get_queue
 from telegram import Bot
+from telegram.error import BadRequest
 
 from boardgamesbot.decorators import database_sync_to_async
 
@@ -102,8 +103,12 @@ def delete_weekly_poll(chat_id: int) -> bool:
         wp = WeeklyPoll.objects.get(chat_id=chat_id)
 
         if wp.message_id:
-            async_to_sync(Bot(settings.TELEGRAM_TOKEN).stop_poll)(wp.chat_id, wp.message_id)
-            async_to_sync(Bot(settings.TELEGRAM_TOKEN).unpin_chat_message)(wp.chat_id, wp.message_id)
+            try:
+                async_to_sync(Bot(settings.TELEGRAM_TOKEN).stop_poll)(wp.chat_id, wp.message_id)
+                async_to_sync(Bot(settings.TELEGRAM_TOKEN).unpin_chat_message)(wp.chat_id, wp.message_id)
+            except BadRequest:
+                # already unpinned or poll already closed
+                pass
 
             # if pool is in the future delete it
             if wp.poll_date > pendulum.now().date():
