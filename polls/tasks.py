@@ -56,7 +56,11 @@ def update_weekly_poll(poll_id):
         if wp.language == 'en-us':
             formatted_date = date.format('dddd M/D', wp.language)
         else:
-            formatted_date = date.format('dddd D/M', wp.language)
+            try:
+                formatted_date = date.format('dddd D/M', wp.language)
+            except ValueError:
+                # fallback to english
+                formatted_date = date.format('dddd D/M', 'en-us')
 
         poll_question = f"{wp.question_prefix} {formatted_date.title()}"[0:255]
 
