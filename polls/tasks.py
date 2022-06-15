@@ -27,7 +27,11 @@ async def stop_poll(chat_id, message_id):
 def update_weekly_poll(poll_id):
     from polls.models import WeeklyPoll
     logger.debug(f'start update_weekly_poll({poll_id})')
-    wp = WeeklyPoll.objects.get(id=poll_id)
+    try:
+        wp = WeeklyPoll.objects.get(id=poll_id)
+    except ObjectDoesNotExist:
+        logger.error(f'weekly poll {poll_id} not found')
+        return False
 
     diff = pendulum.now().date().diff(wp.poll_date, False).days
 
