@@ -14,7 +14,7 @@ from django_rq import get_queue
 from telegram import Bot
 from telegram.error import BadRequest
 
-from bot.models import User
+from bot.models import Chat, User
 from gamebot.decorators import database_sync_to_async
 
 logger = logging.getLogger(f'gamebot.{__name__}')
@@ -55,7 +55,8 @@ def weekly_poll_save(instance, **kwargs):
 @database_sync_to_async
 def cru_update_weekly_poll(chat_id: int, weekday: int, lang: str = 'en', question_prefix: str = '',
                            answers: dict = []) -> bool:
-    db_poll, created = WeeklyPoll.objects.get_or_create(chat_id=chat_id)
+    chat, created = Chat.objects.get_or_create(id=chat_id)
+    db_poll, created = WeeklyPoll.objects.get_or_create(chat=chat)
     db_poll.lang = lang
     db_poll.weekday = weekday
     db_poll.poll_date = pendulum.now().next(weekday).date()
