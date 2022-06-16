@@ -145,7 +145,7 @@ async def handle_games(update: Update, context: CallbackContext.DEFAULT_TYPE) ->
         from games.models import add_game as add_game_db
         game_data = await get_game(data['game'])
         if game_data:
-            new = await add_game_db(update.effective_user.id, game_data, update.effective_chat.id)
+            new = await add_game_db(update.effective_user, game_data, update.effective_chat)
             caption = _("Game added:") if new else _("Game updated:")
             await context.bot.send_photo(
                 chat_id=update.effective_chat.id,
@@ -160,3 +160,10 @@ async def handle_games(update: Update, context: CallbackContext.DEFAULT_TYPE) ->
             )
 
     await update.callback_query.message.delete()
+
+
+async def handle_play(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+    """ Record game score """
+    translation.activate(update.effective_user.language_code)
+
+    # choose game from your library

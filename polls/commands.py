@@ -134,15 +134,8 @@ async def weeklypoll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
 async def poll_answer(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """User answers a poll"""
 
-    if update.poll_answer.user.first_name:
-        name = update.poll_answer.user.first_name
-    elif update.poll_answer.user.username:
-        name = update.poll_answer.user.username
-    else:
-        name = "Unknown"
-
     await update_poll_answer(
         poll_id=update.poll_answer.poll_id,
-        user_id=update.poll_answer.user.id,
+        user=update.poll_answer.user,
         answer=update.poll_answer.option_ids
     )

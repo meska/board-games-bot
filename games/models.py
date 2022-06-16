@@ -1,9 +1,10 @@
+import telegram
 from django.db import models
 # Create your models here.
 from django.utils.text import slugify
 from munch import Munch, munchify
 
-from bot.models import Chat, User
+from bot.models import Chat, cru_chat, cru_user
 from gamebot.decorators import database_sync_to_async
 
 
@@ -89,17 +90,17 @@ def group_games(chat_id: int) -> list:
 
 
 @database_sync_to_async
-def add_game(user_id: int, game_data: Munch, chat_id: int = None) -> bool:
+def add_game(user: telegram.User, game_data: Munch, chat: telegram.Chat = None) -> bool:
     """
     Add a game to the user's list of games
     """
     game = update_game(game_data)
 
-    user, user_created = User.objects.get_or_create(id=user_id)
+    user, user_created = cru_user(user)
     user_game, new = UserGame.objects.get_or_create(user=user, game=game)
 
-    if chat_id:
-        chat, created = Chat.objects.get_or_create(id=chat_id)
+    if chat:
+        chat, created = cru_chat(chat)
         chat.members.add(user)
         chat.save()
 
@@ -107,13 +108,14 @@ def add_game(user_id: int, game_data: Munch, chat_id: int = None) -> bool:
 
 
 @database_sync_to_async
-def remove_game(user_id: int, game_data: Munch, chat_id: int = None) -> bool:
+def remove_game(user: telegram.User, game_data: Munch) -> bool:
     """
     Remove a game to the user's list of games
     """
     game = update_game(game_data)
+    user, user_created = cru_user(user)
 
-    UserGame.objects.filter(user_id=user_id, game=game).delete()
+    UserGame.objects.filter(user=user, game=game).delete()
 
     return True
 

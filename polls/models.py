@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 
 import pendulum
+import telegram
 from asgiref.sync import async_to_sync
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -14,7 +15,7 @@ from django_rq import get_queue
 from telegram import Bot
 from telegram.error import BadRequest
 
-from bot.models import Chat, User
+from bot.models import Chat, cru_user
 from gamebot.decorators import database_sync_to_async
 
 logger = logging.getLogger(f'gamebot.{__name__}')
@@ -78,18 +79,18 @@ def get_weekly_poll(chat_id: int = None, poll_id: int = None) -> Optional[Weekly
 
 
 @database_sync_to_async
-def update_poll_answer(poll_id: int, user_id: int, answer: []) -> bool:
-    u, created = User.objects.get_or_create(id=user_id)
+def update_poll_answer(poll_id: int, user: telegram.User, answer: []) -> bool:
+    u, created = cru_user(user)
     try:
         wp = WeeklyPoll.objects.get(poll_id=poll_id)
-        wa, created = WeeklyPollAnswer.objects.get_or_create(wp_id=wp.id, user_id=user_id)
+        wa, created = WeeklyPollAnswer.objects.get_or_create(wp_id=wp.id, user=u)
         wa.answer = answer[0] if answer else None
         wa.user = u
         wa.save()
         logger.info(f"{wa.user.name} answered {wa.get_answer_display()} - {wp.weekday}")
 
         from bot.tasks import new_chat_user_task
-        new_chat_user_task.delay(wp.chat_id, user_id)
+        new_chat_user_task.delay(wp.chat_id, u.id)
 
     except ObjectDoesNotExist:
         logger.warning(f"poll {poll_id} does not exist")
@@ -101,7 +102,7 @@ def update_poll_answer(poll_id: int, user_id: int, answer: []) -> bool:
 @database_sync_to_async
 def get_wp_partecipating_users(wp_id: int) -> []:
     wp = WeeklyPoll.objects.get(id=wp_id)
-    return list(wp.weeklypollanswer_set.filter(answer=0).values('user_id', 'user_name'))
+    return list(wp.weeklypollanswer_set.filter(answer=0).values('user__id', 'user__username'))
 
 
 @database_sync_to_async

@@ -21,15 +21,25 @@ class User(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
 
 
-@database_sync_to_async
-def new_chat_user(chat: telegram.Chat, user: telegram.User, is_admin: bool = False) -> bool:
+def cru_chat(chat):
+    c, chat_created = Chat.objects.get_or_create(id=chat.id)
+    c.title = chat.title
+    return c
+
+
+def cru_user(user):
     u, user_created = User.objects.get_or_create(id=user.id)
     u.username = user.username
     u.name = user.first_name
     u.save()
+    return u, user_created
 
-    c, chat_created = Chat.objects.get_or_create(id=chat.id)
-    c.title = chat.title
+
+@database_sync_to_async
+def new_chat_user(chat: telegram.Chat, user: telegram.User, is_admin: bool = False) -> bool:
+    u, user_created = cru_user(user)
+    c, created = cru_chat(chat)
+
     c.members.add(u)
     c.save()
 
@@ -38,14 +48,8 @@ def new_chat_user(chat: telegram.Chat, user: telegram.User, is_admin: bool = Fal
 
 @database_sync_to_async
 def left_chat_user(chat: telegram.Chat, user: telegram.User) -> bool:
-    c, chat_created = Chat.objects.get_or_create(id=chat.id)
-    c.title = chat.title
-    c.save()
-
-    u, user_created = User.objects.get_or_create(id=user.id)
-    u.username = user.username
-    u.name = user.first_name
-    u.save()
+    c, chat_created = cru_chat(chat)
+    u, user_created = cru_user(user)
 
     c.members.remove(u)
     c.save()
