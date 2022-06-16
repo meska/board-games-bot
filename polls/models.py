@@ -14,14 +14,14 @@ from django_rq import get_queue
 from telegram import Bot
 from telegram.error import BadRequest
 
-from boardgamesbot.decorators import database_sync_to_async
+from gamebot.decorators import database_sync_to_async
 
 logger = logging.getLogger(f'gamebot.{__name__}')
 
 
 class WeeklyPoll(models.Model):
     poll_id = models.BigIntegerField(null=True, blank=True)
-    chat_id = models.BigIntegerField(unique=True)
+    chat = models.ForeignKey('bot.Chat', on_delete=models.CASCADE, null=True)
     message_id = models.BigIntegerField(null=True, blank=True)
     weekday = models.IntegerField(null=True, blank=True)
     language = models.CharField(max_length=5, default='en')
@@ -35,7 +35,7 @@ class WeeklyPoll(models.Model):
 
 class WeeklyPollAnswer(models.Model):
     wp = models.ForeignKey(WeeklyPoll, on_delete=models.CASCADE)
-    user_id = models.IntegerField()
+    user = models.ForeignKey('bot.User', on_delete=models.CASCADE)
     answer = models.IntegerField(null=True, blank=True, choices=((0, _('Yes')), (1, _('No'))))
     user_name = models.CharField(max_length=200, null=True, blank=True)
     answer_date = models.DateTimeField('date answered', auto_now=True)

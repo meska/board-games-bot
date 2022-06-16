@@ -28,7 +28,7 @@ async def add_game(update: Update, context: CallbackContext.DEFAULT_TYPE) -> Non
         # lookup game by BGG by ID
         game_data = await get_game(game)
         if game_data:
-            new = await add_game_db(update.effective_user.id, game_data)
+            new = await add_game_db(update.effective_user.id, game_data, update.effective_chat.id)
             caption = _("Game added:") if new else _("Game updated:")
             await context.bot.send_photo(
                 chat_id=update.effective_chat.id,
@@ -114,7 +114,7 @@ async def list_games(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
             disable_web_page_preview=True,
             parse_mode='Markdown',
             text=label + "\n" + "\n".join(
-                [f"[{game.bgg_id}] {game.name} ({game.year}) [link]({game.url})" for game
+                [f"[{game.id}] {game.name} ({game.year}) [link]({game.url})" for game
                  in games])
         )
         await sleep(5)
@@ -141,7 +141,7 @@ async def handle_games(update: Update, context: CallbackContext.DEFAULT_TYPE) ->
         from games.models import add_game as add_game_db
         game_data = await get_game(data['game'])
         if game_data:
-            new = await add_game_db(update.effective_user.id, game_data)
+            new = await add_game_db(update.effective_user.id, game_data, update.effective_chat.id)
             caption = _("Game added:") if new else _("Game updated:")
             await context.bot.send_photo(
                 chat_id=update.effective_chat.id,

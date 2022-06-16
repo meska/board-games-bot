@@ -1,49 +1,53 @@
 import telegram
 from django.db import models
 
-from boardgamesbot.decorators import database_sync_to_async
+from gamebot.decorators import database_sync_to_async
 
 
 class Chat(models.Model):
     """
     Keep a list of groups
     """
-    chat_id = models.BigIntegerField()
-    chat_title = models.CharField(max_length=255)
+    id = models.BigIntegerField(primary_key=True)
+    title = models.CharField(max_length=255)
+    members = models.ManyToManyField('bot.User', blank=True)
     last_updated = models.DateTimeField(auto_now=True)
 
 
-class GroupMember(models.Model):
-    """
-    Keep a list of users in group
-    """
-    chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
-    user_id = models.IntegerField()
-    user_name = models.CharField(max_length=255)
-    is_admin = models.BooleanField(default=False)
+class User(models.Model):
+    id = models.BigIntegerField(primary_key=True)
+    username = models.CharField(max_length=255, null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
     last_updated = models.DateTimeField(auto_now=True)
 
 
 @database_sync_to_async
 def new_chat_user(chat: telegram.Chat, user: telegram.User, is_admin: bool = False) -> bool:
-    c, created = Chat.objects.get_or_create(chat_id=chat.id, chat_title=chat.title)
-    gm, created = GroupMember.objects.get_or_create(chat=c, user_id=user.id)
-    gm.user_name = user.first_name
-    gm.is_admin = is_admin
-    gm.save()
-    return created
+    u, user_created = User.objects.get_or_create(id=user.id)
+    u.username = user.username
+    u.name = user.first_name
+    u.save()
+
+    c, chat_created = Chat.objects.get_or_create(id=chat.id)
+    c.title = chat.title
+    c.members.add(u)
+    c.save()
+
+    return user_created
 
 
 @database_sync_to_async
 def left_chat_user(chat: telegram.Chat, user: telegram.User) -> bool:
-    c, created = Chat.objects.get_or_create(chat_id=chat.id, chat_title=chat.title)
-    GroupMember.objects.filter(chat=c, user_id=user.id).delete()
+    c, chat_created = Chat.objects.get_or_create(id=chat.id)
+    c.title = chat.title
+    c.save()
+
+    u, user_created = User.objects.get_or_create(id=user.id)
+    u.username = user.username
+    u.name = user.first_name
+    u.save()
+
+    c.members.remove(u)
+    c.save()
+
     return True
-
-
-@database_sync_to_async
-def my_groups(user_id: int) -> bool:
-    """
-    Return a list of groups the user is in
-    """
-    return list(GroupMember.objects.filter(user_id=user_id).values_list('chat__chat_id', 'chat__chat_title'))
