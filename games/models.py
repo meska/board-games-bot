@@ -101,7 +101,7 @@ def add_game(user: telegram.User, game_data: Munch, chat: telegram.Chat = None) 
 
     if chat:
         c, created = cru_chat(chat)
-        c.members.add(user)
+        c.members.add(u)
         c.save()
 
     return new
