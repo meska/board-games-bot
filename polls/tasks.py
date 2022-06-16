@@ -59,7 +59,7 @@ def update_weekly_poll(poll_id):
         date: Date = pendulum.date(wp.poll_date.year, wp.poll_date.month, wp.poll_date.day)
 
         try:
-            formatted_date = date.format('dddd D/M', wp.language)
+            formatted_date = date.format('dddd D/M', wp.lang)
         except ValueError:
             # fallback to english
             formatted_date = date.format('dddd D/M', 'en')

@@ -14,6 +14,7 @@ from django_rq import get_queue
 from telegram import Bot
 from telegram.error import BadRequest
 
+from bot.models import User
 from gamebot.decorators import database_sync_to_async
 
 logger = logging.getLogger(f'gamebot.{__name__}')
@@ -24,7 +25,7 @@ class WeeklyPoll(models.Model):
     chat = models.ForeignKey('bot.Chat', on_delete=models.CASCADE, null=True)
     message_id = models.BigIntegerField(null=True, blank=True)
     weekday = models.IntegerField(null=True, blank=True)
-    language = models.CharField(max_length=5, default='en')
+    lang = models.CharField(max_length=5, default='en')
     question_prefix = models.CharField(max_length=200, default='')
     answers = ArrayField(models.CharField(max_length=50), default=list)
     poll_date = models.DateField(null=True, blank=True)
@@ -37,7 +38,6 @@ class WeeklyPollAnswer(models.Model):
     wp = models.ForeignKey(WeeklyPoll, on_delete=models.CASCADE)
     user = models.ForeignKey('bot.User', on_delete=models.CASCADE)
     answer = models.IntegerField(null=True, blank=True, choices=((0, _('Yes')), (1, _('No'))))
-    user_name = models.CharField(max_length=200, null=True, blank=True)
     answer_date = models.DateTimeField('date answered', auto_now=True)
 
     def __str__(self):
@@ -56,7 +56,7 @@ def weekly_poll_save(instance, **kwargs):
 def cru_update_weekly_poll(chat_id: int, weekday: int, lang: str = 'en', question_prefix: str = '',
                            answers: dict = []) -> bool:
     db_poll, created = WeeklyPoll.objects.get_or_create(chat_id=chat_id)
-    db_poll.language = lang
+    db_poll.lang = lang
     db_poll.weekday = weekday
     db_poll.poll_date = pendulum.now().next(weekday).date()
     db_poll.question_prefix = question_prefix
@@ -77,16 +77,17 @@ def get_weekly_poll(chat_id: int = None, poll_id: int = None) -> Optional[Weekly
 
 
 @database_sync_to_async
-def update_poll_answer(poll_id: int, user_id: int, answer: [], user_name: str = None) -> bool:
+def update_poll_answer(poll_id: int, user_id: int, answer: []) -> bool:
     wp = WeeklyPoll.objects.get(poll_id=poll_id)
     wa, created = WeeklyPollAnswer.objects.get_or_create(wp_id=wp.id, user_id=user_id)
     wa.answer = answer[0] if answer else None
-    wa.user_name = user_name
+    u, created = User.objects.get_or_create(id=user_id)
+    wa.user = u
     wa.save()
-    logger.info(f"{wa.user_name} answered {wa.get_answer_display()} - {wp.weekday}")
+    logger.info(f"{wa.user.name} answered {wa.get_answer_display()} - {wp.weekday}")
 
     from bot.tasks import new_chat_user_task
-    new_chat_user_task.delay(wp.chat_id, user_id, user_name)
+    new_chat_user_task.delay(wp.chat_id, user_id)
 
     return created
 
