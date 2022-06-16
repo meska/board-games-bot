@@ -96,8 +96,8 @@ def add_game(user: telegram.User, game_data: Munch, chat: telegram.Chat = None) 
     """
     game = update_game(game_data)
 
-    user, user_created = cru_user(user)
-    user_game, new = UserGame.objects.get_or_create(user=user, game=game)
+    u, user_created = cru_user(user)
+    user_game, new = UserGame.objects.get_or_create(user=u, game=game)
 
     if chat:
         c, created = cru_chat(chat)
