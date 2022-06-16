@@ -144,6 +144,5 @@ async def poll_answer(update: Update, context: CallbackContext.DEFAULT_TYPE) -> 
     await update_poll_answer(
         poll_id=update.poll_answer.poll_id,
         user_id=update.poll_answer.user.id,
-        answer=update.poll_answer.option_ids,
-        user_name=name
+        answer=update.poll_answer.option_ids
     )

@@ -78,16 +78,21 @@ def get_weekly_poll(chat_id: int = None, poll_id: int = None) -> Optional[Weekly
 
 @database_sync_to_async
 def update_poll_answer(poll_id: int, user_id: int, answer: []) -> bool:
-    wp = WeeklyPoll.objects.get(poll_id=poll_id)
-    wa, created = WeeklyPollAnswer.objects.get_or_create(wp_id=wp.id, user_id=user_id)
-    wa.answer = answer[0] if answer else None
     u, created = User.objects.get_or_create(id=user_id)
-    wa.user = u
-    wa.save()
-    logger.info(f"{wa.user.name} answered {wa.get_answer_display()} - {wp.weekday}")
+    try:
+        wp = WeeklyPoll.objects.get(poll_id=poll_id)
+        wa, created = WeeklyPollAnswer.objects.get_or_create(wp_id=wp.id, user_id=user_id)
+        wa.answer = answer[0] if answer else None
+        wa.user = u
+        wa.save()
+        logger.info(f"{wa.user.name} answered {wa.get_answer_display()} - {wp.weekday}")
 
-    from bot.tasks import new_chat_user_task
-    new_chat_user_task.delay(wp.chat_id, user_id)
+        from bot.tasks import new_chat_user_task
+        new_chat_user_task.delay(wp.chat_id, user_id)
+
+    except ObjectDoesNotExist:
+        logger.warning(f"poll {poll_id} does not exist")
+        return False
 
     return created
 

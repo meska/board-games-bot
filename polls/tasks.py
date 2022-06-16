@@ -3,6 +3,7 @@ import logging
 
 import pendulum
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django_rq import get_queue, job
 from pendulum import Date
 from telegram import Bot
