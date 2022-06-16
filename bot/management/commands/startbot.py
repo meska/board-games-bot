@@ -54,7 +54,7 @@ class Command(BaseCommand):
         app.add_handler(CommandHandler('weeklypoll', weeklypoll))
         app.add_handler(CommandHandler('version', version))
         app.add_handler(CommandHandler('roll', roll))
-        app.add_handler(CommandHandler('add', add_game,))
+        app.add_handler(CommandHandler('add', add_game, ))
         app.add_handler(CommandHandler('del', del_game, ))
         app.add_handler(CommandHandler('list', list_games))
         app.add_handler(CommandHandler('play', handle_play))
@@ -65,6 +65,7 @@ class Command(BaseCommand):
         app.add_handler(MessageHandler(filters.Dice.ALL, handle_dice))
         app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, handle_members))
         app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, handle_members))
+
         # app.add_handler(MessageHandler(filters.ALL, handle_unwanted))
 
         # Start Bot

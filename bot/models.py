@@ -21,15 +21,20 @@ class User(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
 
 
-def cru_chat(chat):
+def cru_chat(chat: telegram.Chat) -> [Chat, bool]:
     c, chat_created = Chat.objects.get_or_create(id=chat.id)
     if chat.title:
         c.title = chat.title
         c.save()
+    if chat.type.name == 'PRIVATE' and chat_created:
+        u = User.objects.get(id=chat.id)
+        c.title = chat.type.title()
+        c.members.add(u)
+        c.save()
     return c, chat_created
 
 
-def cru_user(user):
+def cru_user(user: telegram.User) -> [User, bool]:
     u, user_created = User.objects.get_or_create(id=user.id)
     if user.username or user.first_name:
         u.username = user.username
@@ -39,7 +44,7 @@ def cru_user(user):
 
 
 @database_sync_to_async
-def new_chat_user(chat: telegram.Chat, user: telegram.User, is_admin: bool = False) -> bool:
+def new_chat_user(chat: telegram.Chat, user: telegram.User) -> bool:
     u, user_created = cru_user(user)
     c, created = cru_chat(chat)
 
@@ -58,3 +63,11 @@ def left_chat_user(chat: telegram.Chat, user: telegram.User) -> bool:
     c.save()
 
     return True
+
+
+@database_sync_to_async
+def my_groups(chat: telegram.Chat, user: telegram.User) -> list:
+    u, user_created = cru_user(user)
+    cru_chat(chat)
+
+    return list(Chat.objects.filter(members=u).values_list('id', 'title'))

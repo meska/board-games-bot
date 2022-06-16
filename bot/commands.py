@@ -44,6 +44,9 @@ async def handle_query_callback(update: Update, context: CallbackContext.DEFAULT
     elif query.data.get('handler') == 'games':
         from games.commands import handle_games
         await handle_games(update, context)
+    elif query.data.get('handler') == 'play':
+        from games.commands import handle_play
+        await handle_play(update, context)
     else:
         # context gone, delete the message
         await query.message.delete()
@@ -53,6 +56,12 @@ async def handle_replies(update: Update, context: CallbackContext.DEFAULT_TYPE) 
     """
         Reply router
     """
+
+    if context.user_data.get('play_score'):
+        from games.commands import handle_score
+        await handle_score(update, context)
+        return
+
     query = update.callback_query
     if not query or isinstance(query.data, InvalidCallbackData):
         return
@@ -60,7 +69,7 @@ async def handle_replies(update: Update, context: CallbackContext.DEFAULT_TYPE) 
     if query and query.message:
         await query.message.delete()
 
-    if query.data.get('handler') == 'games':
+    if isinstance(query.data, dict) and query.data.get('handler') == 'games':
         from games.commands import handle_games
         await handle_games(update, context)
     else:

@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import telegram
 from django.db import models
 # Create your models here.
 from django.utils.text import slugify
 from munch import Munch, munchify
 
-from bot.models import Chat, cru_chat, cru_user
+from bot.models import Chat, User, cru_chat, cru_user
 from gamebot.decorators import database_sync_to_async
 
 
@@ -48,7 +50,7 @@ class PlayScore(models.Model):
     """
     play = models.ForeignKey(Play, on_delete=models.CASCADE)
     user = models.ForeignKey('bot.User', on_delete=models.CASCADE)
-    score = models.IntegerField()
+    score = models.IntegerField(null=True, blank=True)
     last_updated = models.DateTimeField(auto_now=True)
 
 
@@ -76,17 +78,46 @@ def my_games(user_id: int) -> list:
 
 
 @database_sync_to_async
-def group_games(chat_id: int) -> list:
+def group_games(chat: telegram.Chat | int) -> list:
     """
     Return a list of games owned by users in group
     """
-    games = UserGame.objects.filter(user__in=Chat.objects.get(id=chat_id).members.all()).distinct()
+    if isinstance(chat, int):
+        c = Chat.objects.get(id=chat)
+    else:
+        c, created = cru_chat(chat)
+
+    if isinstance(c, Chat):
+        games = UserGame.objects.filter(user__in=c.members.all()).distinct()
+        return [munchify({
+            'name': game.game.name,
+            'id': game.game.id,
+            'year': game.game.year,
+            'url': game.game.url,
+        }) for game in games]
+    return []
+
+
+@database_sync_to_async
+def group_players(chat: telegram.Chat | int, play_id: int = None) -> list:
+    """
+    Return a list of games owned by users in group
+    """
+    if isinstance(chat, int):
+        c = Chat.objects.get(id=chat)
+    else:
+        c, created = cru_chat(chat)
+
+    players = c.members.all()
+
+    if play_id:
+        # exclude players who have been recorded in this play
+        play = Play.objects.get(id=play_id)
+
     return [munchify({
-        'name': game.game.name,
-        'id': game.game.id,
-        'year': game.game.year,
-        'url': game.game.url,
-    }) for game in games]
+        'name': player.name if player.name else player.username if player.username else player.id,
+        'id': player.id
+    }) for player in players]
 
 
 @database_sync_to_async
@@ -133,3 +164,19 @@ def update_game(game_data):
     game.year = game_data.year
     game.save()
     return game
+
+
+@database_sync_to_async
+def cru_play(chat_id: int, game_id: int, user_id: int, score: int) -> Play:
+    """
+    Create or update a play
+    """
+    chat, created = Chat.objects.get_or_create(id=chat_id)
+    game = Game.objects.get(id=game_id)
+    user = User.objects.get(id=user_id)
+    play, new = Play.objects.get_or_create(chat=chat, game=game)
+    play_score, new = PlayScore.objects.get_or_create(play=play, user=user)
+    play_score.score = score
+    play_score.save()
+
+    return True

@@ -3,11 +3,12 @@ from asyncio import sleep
 
 from django.utils import translation
 from django.utils.translation import gettext as _
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
+from bot.models import my_groups
 from games.bgg import get_game, search_game
-from games.models import group_games, my_games
+from games.models import cru_play, group_games, group_players, my_games
 
 logger = logging.getLogger(f'gamebot.{__name__}')
 
@@ -109,7 +110,7 @@ async def list_games(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
         games = await my_games(update.effective_user.id)
         label = _("My games")
     else:
-        games = await group_games(update.effective_chat.id)
+        games = await group_games(update.effective_chat)
         label = _("Games in this group")
 
     if games:
@@ -162,8 +163,144 @@ async def handle_games(update: Update, context: CallbackContext.DEFAULT_TYPE) ->
     await update.callback_query.message.delete()
 
 
-async def handle_play(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+async def handle_score(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """ Record game score """
     translation.activate(update.effective_user.language_code)
+
+    user_data = context.user_data.get('play_score')
+    score = update.message.text
+    if score.isdigit():
+        await cru_play(user_data.get('group'), user_data.get('game'), user_data.get('player'), int(score))
+        # other users
+        players = await group_players(user_data.get('group'))
+        keyboard = []
+        for player in players:
+            keyboard.append([
+                InlineKeyboardButton(f"{player.name}",
+                                     callback_data={'handler': 'play', 'data': 'player', 'player': player.id,
+                                                    'game': user_data.get('game'), 'group': user_data.get('group')})
+            ])
+        keyboard.append([
+            InlineKeyboardButton(_("Done"),
+                                 callback_data={'handler': 'play', 'data': 'player', 'player': -1,
+                                                'game': user_data.get('game'), 'group': user_data.get('group')})
+        ])
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=_("Chose another a player or click Done to finish"),
+            reply_markup=reply_markup,
+        )
+    else:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=_(f"Invalid score: {score}"),
+            reply_markup=ForceReply(selective=True)
+        )
+
+    # record score
+
+
+async def handle_play(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+    """ Record game play """
+    translation.activate(update.effective_user.language_code)
+
+    if update.callback_query and isinstance(update.callback_query.data, dict):
+        data = update.callback_query.data
+        if data.get('data') == 'group':
+            games = await group_games(data.get('group'))
+            if games:
+                keyboard = []
+                for game in games:
+                    keyboard.append([
+                        InlineKeyboardButton(f"[{game.id}] {game.name} ({game.year})",
+                                             callback_data={'handler': 'play', 'data': 'game', 'game': game.id,
+                                                            'group': data.get('group')})
+                    ])
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=_("Please choose a game"),
+                    reply_markup=reply_markup,
+                )
+            else:
+                message = await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=_(f"No games found in this group.")
+                )
+                await sleep(5)
+                await message.delete()
+        elif data.get('data') == 'game':
+            game = data.get('game')
+            group = data.get('group')
+
+            players = await group_players(group)
+            if players:
+                keyboard = []
+                for player in players:
+                    keyboard.append([
+                        InlineKeyboardButton(f"{player.name}",
+                                             callback_data={'handler': 'play', 'data': 'player', 'player': player.id,
+                                                            'game': game, 'group': group})
+                    ])
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=_("Please choose a player"),
+                    reply_markup=reply_markup,
+                )
+            else:
+                message = await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=_(f"No players found in this group.")
+                )
+                await sleep(5)
+                await message.delete()
+        elif data.get('data') == 'player':
+            player = data.get('player')
+            game = data.get('game')
+            group = data.get('group')
+            # ask for score
+
+            if player == -1:
+                # done
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=_("Done"),
+                )
+                context.user_data.clear()
+            else:
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=_(f"Please write the score of {player} in {game}"),
+                    reply_markup=ForceReply(selective=True)
+                )
+                context.user_data['play_score'] = {'player': player, 'game': game, 'group': group}
+            return
+        else:
+            return
+
+    else:
+        # choose group
+        groups = await my_groups(update.effective_chat, update.effective_user)
+        if not groups:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=_("You are not in any group. Please join one first.")
+            )
+            return
+        else:
+            keyboard = []
+            for group in groups:
+                keyboard.append([
+                    InlineKeyboardButton(f"{group[1]}",
+                                         callback_data={'handler': 'play', 'data': 'group', 'group': group[0]})
+                ])
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=_("Please choose a group"),
+                reply_markup=reply_markup,
+            )
 
     # choose game from your library
