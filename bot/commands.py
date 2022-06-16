@@ -55,7 +55,8 @@ async def handle_replies(update: Update, context: CallbackContext.DEFAULT_TYPE) 
     """
     query = update.callback_query
     if not query or isinstance(query.data, InvalidCallbackData):
-        await query.message.delete()
+        if query.message:
+            await query.message.delete()
         return
 
     if query.data.get('handler') == 'games':

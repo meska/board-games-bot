@@ -18,7 +18,7 @@ logger = logging.getLogger(f'gamebot.{__name__}')
 async def set_commands():
     bot = Bot(settings.TELEGRAM_TOKEN)
     await bot.set_my_commands([
-        ('start', 'Start'),
+        # ('start', 'Start'),
         ('weeklypoll', 'manage a weekly poll'),
         ('version', 'show version'),
         ('roll', 'pick a random user'),
