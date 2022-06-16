@@ -23,15 +23,18 @@ class User(models.Model):
 
 def cru_chat(chat):
     c, chat_created = Chat.objects.get_or_create(id=chat.id)
-    c.title = chat.title
-    return c
+    if chat.title:
+        c.title = chat.title
+        c.save()
+    return c, chat_created
 
 
 def cru_user(user):
     u, user_created = User.objects.get_or_create(id=user.id)
-    u.username = user.username
-    u.name = user.first_name
-    u.save()
+    if user.username or user.first_name:
+        u.username = user.username
+        u.name = user.first_name
+        u.save()
     return u, user_created
 
 
