@@ -24,7 +24,7 @@ msgstr ""
 
 #: bot/commands.py:119 bot/commands.py:153
 msgid "No weekly poll available"
-msgstr "Sondaggio settimanale salvato"
+msgstr "Nessun sondaggio settimanale attivo"
 
 #: bot/commands.py:129
 msgid "No users participating in the weekly poll, try later"
@@ -47,53 +47,53 @@ msgstr "Ho scelto {users[winner]['user_name']}!"
 
 #: games/commands.py:22
 msgid "Please write the name of the game or BGG ID after /add"
-msgstr ""
+msgstr "Scrivi il nome del gioco o l'ID BGG dopo /add"
 
 #: games/commands.py:32 games/commands.py:145
 msgid "Game added:"
-msgstr ""
+msgstr "Gioco aggiunto"
 
 #: games/commands.py:32 games/commands.py:145
 msgid "Game updated:"
-msgstr ""
+msgstr "Gioco aggiornato"
 
 #: games/commands.py:43 games/commands.py:93
 #, python-brace-format
 msgid "Game {game} not found."
-msgstr ""
+msgstr "Gioco {game} non trovato"
 
 #: games/commands.py:57
 msgid "Please choose a game"
-msgstr ""
+msgstr "Scegli un gioco"
 
 #: games/commands.py:63
 #, python-brace-format
 msgid "No games found with query: {game}."
-msgstr ""
+msgstr "Nessun gioco trovato con la query: {game}."
 
 #: games/commands.py:77
 msgid "Please write the BGG ID  of the game after /del"
-msgstr ""
+msgstr "Scrivi l'ID BGG del gioco dopo /del"
 
 #: games/commands.py:88
 msgid "Game removed:"
-msgstr ""
+msgstr "Gioco rimosso"
 
 #: games/commands.py:106
 msgid "My games"
-msgstr ""
+msgstr "I miei giochi"
 
 #: games/commands.py:109
 msgid "Games in this group"
-msgstr ""
+msgstr "Giochi in questo gruppo"
 
 #: games/commands.py:125
 msgid "No games found."
-msgstr ""
+msgstr "Nessun gioco trovato."
 
 #: games/commands.py:155
 msgid "Game {data['game']} not found."
-msgstr ""
+msgstr "Gioco {data['game']} non trovato."
 
 #: polls/commands.py:25
 msgid "You must be an administrator of this channel to use this feature."

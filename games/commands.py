@@ -38,10 +38,12 @@ async def add_game(update: Update, context: CallbackContext.DEFAULT_TYPE) -> Non
             )
 
         else:
-            await context.bot.send_message(
+            message = await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=_(f"Game {game} not found.")
             )
+            await sleep(5)
+            await message.delete()
     else:
         games = await search_game(game)
         if games:
@@ -58,10 +60,12 @@ async def add_game(update: Update, context: CallbackContext.DEFAULT_TYPE) -> Non
                 reply_markup=reply_markup,
             )
         else:
-            await context.bot.send_message(
+            message = await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=_(f"No games found with query: {game}.")
             )
+            await sleep(5)
+            await message.delete()
 
     await sleep(5)
     await update.message.delete()
