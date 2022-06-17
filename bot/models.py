@@ -31,7 +31,7 @@ def cru_chat(chat: telegram.Chat) -> [Chat, bool]:
     if chat.title:
         c.title = chat.title
         c.save()
-    if chat.type.name == 'PRIVATE' and chat_created:
+    if chat.type.name == 'PRIVATE' and not c.title:
         u = User.objects.get(id=chat.id)
         c.title = chat.type.title()
         c.members.add(u)
