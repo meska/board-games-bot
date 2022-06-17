@@ -21,20 +21,19 @@ logger = logging.getLogger(f'gamebot.{__name__}')
 async def set_commands():
     bot = Bot(settings.TELEGRAM_TOKEN)
 
-    commands = [
-        # ('start', 'Start'),
-        ('weeklypoll', _('manage a weekly poll')),
-        ('version', _('show version')),
-        ('roll', _('pick a random user')),
-        ('add', _('add game to your collection')),
-        ('list', _('list your games or group games')),
-        ('del', _('remove a game from your collection')),
-        ('play', _('record play')),
-    ]
-
     for lang in settings.LANGUAGES:
         logger.info(f'Setting commands for {lang}')
         translation.activate(lang[0])
+        commands = [
+            # ('start', 'Start'),
+            ('weeklypoll', _('manage a weekly poll')),
+            ('version', _('show version')),
+            ('roll', _('pick a random user')),
+            ('add', _('add game to your collection')),
+            ('list', _('list your games or group games')),
+            ('del', _('remove a game from your collection')),
+            ('play', _('record play')),
+        ]
         await bot.set_my_commands(commands, language_code=lang[0])
         await sleep(1)
 
