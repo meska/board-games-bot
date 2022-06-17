@@ -1,7 +1,11 @@
+import logging
+
 import telegram
 from django.db import models
 
 from gamebot.decorators import database_sync_to_async
+
+logger = logging.getLogger(f'gamebot.{__name__}')
 
 
 class Chat(models.Model):
@@ -22,6 +26,7 @@ class User(models.Model):
 
 
 def cru_chat(chat: telegram.Chat) -> [Chat, bool]:
+    logger.info('cru_chat: %s', chat.id)
     c, chat_created = Chat.objects.get_or_create(id=chat.id)
     if chat.title:
         c.title = chat.title
@@ -35,6 +40,7 @@ def cru_chat(chat: telegram.Chat) -> [Chat, bool]:
 
 
 def cru_user(user: telegram.User) -> [User, bool]:
+    logger.info('cru_user: %s', user.id)
     u, user_created = User.objects.get_or_create(id=user.id)
     if user.username or user.first_name:
         u.username = user.username
@@ -45,6 +51,7 @@ def cru_user(user: telegram.User) -> [User, bool]:
 
 @database_sync_to_async
 def new_chat_user(chat: telegram.Chat, user: telegram.User) -> bool:
+    logger.info('new_chat_user: %s', chat.id)
     u, user_created = cru_user(user)
     c, created = cru_chat(chat)
 
@@ -56,6 +63,7 @@ def new_chat_user(chat: telegram.Chat, user: telegram.User) -> bool:
 
 @database_sync_to_async
 def left_chat_user(chat: telegram.Chat, user: telegram.User) -> bool:
+    logger.info('left_chat_user: %s', chat.id)
     c, chat_created = cru_chat(chat)
     u, user_created = cru_user(user)
 

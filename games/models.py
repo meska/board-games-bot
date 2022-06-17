@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 import telegram
 from django.db import models
 # Create your models here.
@@ -8,6 +10,8 @@ from munch import Munch, munchify
 
 from bot.models import Chat, User, cru_chat, cru_user
 from gamebot.decorators import database_sync_to_async
+
+logger = logging.getLogger(f'gamebot.{__name__}')
 
 
 class Game(models.Model):
@@ -125,6 +129,7 @@ def add_game(user: telegram.User, game_data: Munch, chat: telegram.Chat = None) 
     """
     Add a game to the user's list of games
     """
+    logger.info(f'Adding game {game_data.name} to user {user.id}')
     game = update_game(game_data)
 
     u, user_created = cru_user(user)
@@ -143,6 +148,7 @@ def remove_game(user: telegram.User, game_data: Munch) -> bool:
     """
     Remove a game to the user's list of games
     """
+    logger.info(f'Removing game {game_data.name} from user {user.id}')
     game = update_game(game_data)
     user, user_created = cru_user(user)
 
@@ -171,6 +177,7 @@ def cru_play(chat_id: int, game_id: int, user_id: int, score: int) -> Play:
     """
     Create or update a play
     """
+    logger.info(f'Creating or updating play for chat {chat_id} game {game_id} user {user_id} score {score}')
     chat, created = Chat.objects.get_or_create(id=chat_id)
     game = Game.objects.get(id=game_id)
     user = User.objects.get(id=user_id)
