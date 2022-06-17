@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-06-16 10:03+0000\n"
+"POT-Creation-Date: 2022-06-17 13:17+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,15 +22,15 @@ msgstr ""
 msgid "Welcome to Game Night Bot!"
 msgstr ""
 
-#: bot/commands.py:119 bot/commands.py:153
+#: bot/commands.py:129 bot/commands.py:163
 msgid "No weekly poll available"
 msgstr ""
 
-#: bot/commands.py:129
+#: bot/commands.py:139
 msgid "No users participating in the weekly poll, try later"
 msgstr ""
 
-#: bot/commands.py:136
+#: bot/commands.py:146
 #, python-brace-format
 msgid ""
 "Choosing an user from these:\n"
@@ -38,58 +38,144 @@ msgid ""
 "{userstable}"
 msgstr ""
 
-#: bot/commands.py:140
+#: bot/commands.py:150
 msgid "I choose {users[winner]['user_name']}!"
 msgstr ""
 
-#: games/commands.py:22
+#: bot/management/commands/startbot.py:24
+msgid "manage a weekly poll"
+msgstr ""
+
+#: bot/management/commands/startbot.py:25
+msgid "show version"
+msgstr ""
+
+#: bot/management/commands/startbot.py:26
+msgid "pick a random user"
+msgstr ""
+
+#: bot/management/commands/startbot.py:27
+msgid "add game to your collection"
+msgstr ""
+
+#: bot/management/commands/startbot.py:28
+msgid "list your games or group games"
+msgstr ""
+
+#: bot/management/commands/startbot.py:29
+msgid "remove a game from your collection"
+msgstr ""
+
+#: bot/management/commands/startbot.py:30
+msgid "record play"
+msgstr ""
+
+#: gamebot/settings.py:137
+msgid "English"
+msgstr ""
+
+#: gamebot/settings.py:138
+msgid "Italian"
+msgstr ""
+
+#: gamebot/settings.py:139
+msgid "German"
+msgstr ""
+
+#: gamebot/settings.py:140
+msgid "French"
+msgstr ""
+
+#: gamebot/settings.py:141
+msgid "Spanish"
+msgstr ""
+
+#: games/commands.py:23
 msgid "Please write the name of the game or BGG ID after /add"
 msgstr ""
 
-#: games/commands.py:32 games/commands.py:145
+#: games/commands.py:33 games/commands.py:150
 msgid "Game added:"
 msgstr ""
 
-#: games/commands.py:32 games/commands.py:145
+#: games/commands.py:33 games/commands.py:150
 msgid "Game updated:"
 msgstr ""
 
-#: games/commands.py:43 games/commands.py:93
+#: games/commands.py:44 games/commands.py:98
 #, python-brace-format
 msgid "Game {game} not found."
 msgstr ""
 
-#: games/commands.py:57
+#: games/commands.py:60 games/commands.py:223
 msgid "Please choose a game"
 msgstr ""
 
-#: games/commands.py:63
+#: games/commands.py:66
 #, python-brace-format
 msgid "No games found with query: {game}."
 msgstr ""
 
-#: games/commands.py:77
+#: games/commands.py:82
 msgid "Please write the BGG ID  of the game after /del"
 msgstr ""
 
-#: games/commands.py:88
+#: games/commands.py:93
 msgid "Game removed:"
 msgstr ""
 
-#: games/commands.py:106
+#: games/commands.py:111
 msgid "My games"
 msgstr ""
 
-#: games/commands.py:109
+#: games/commands.py:114
 msgid "Games in this group"
 msgstr ""
 
-#: games/commands.py:125
+#: games/commands.py:130
 msgid "No games found."
 msgstr ""
 
-#: games/commands.py:155
+#: games/commands.py:160
 msgid "Game {data['game']} not found."
+msgstr ""
+
+#: games/commands.py:184 games/commands.py:269
+msgid "Done"
+msgstr ""
+
+#: games/commands.py:191
+msgid "Chose another a player or click Done to finish"
+msgstr ""
+
+#: games/commands.py:197
+#, python-brace-format
+msgid "Invalid score: {score}"
+msgstr ""
+
+#: games/commands.py:229
+msgid "No games found in this group."
+msgstr ""
+
+#: games/commands.py:249
+msgid "Please choose a player"
+msgstr ""
+
+#: games/commands.py:255
+msgid "No players found in this group."
+msgstr ""
+
+#: games/commands.py:275
+#, python-brace-format
+msgid "Please write the score of {player} in {game}"
+msgstr ""
+
+#: games/commands.py:289
+msgid "You are not in any group. Please join one first."
+msgstr ""
+
+#: games/commands.py:302
+msgid "Please choose a group"
 msgstr ""
 
 #: polls/commands.py:25
@@ -108,11 +194,11 @@ msgstr ""
 msgid "Game Night"
 msgstr ""
 
-#: polls/commands.py:60 polls/models.py:39
+#: polls/commands.py:60 polls/models.py:41
 msgid "Yes"
 msgstr ""
 
-#: polls/commands.py:60 polls/models.py:39
+#: polls/commands.py:60 polls/models.py:41
 msgid "No"
 msgstr ""
 

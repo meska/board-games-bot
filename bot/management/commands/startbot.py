@@ -1,8 +1,10 @@
 import asyncio
 import logging
+from asyncio import sleep
 
 from django.conf import settings
 from django.core.management import BaseCommand
+from django.utils.translation import gettext as _
 from telegram import Bot
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, \
     MessageHandler, PollAnswerHandler, \
@@ -17,16 +19,22 @@ logger = logging.getLogger(f'gamebot.{__name__}')
 
 async def set_commands():
     bot = Bot(settings.TELEGRAM_TOKEN)
-    await bot.set_my_commands([
+
+    commands = [
         # ('start', 'Start'),
-        ('weeklypoll', 'manage a weekly poll'),
-        ('version', 'show version'),
-        ('roll', 'pick a random user'),
-        ('add', 'add game to your collection'),
-        ('list', 'list your games or group games'),
-        ('del', 'remove a game from your collection'),
-        ('play', 'record play'),
-    ])
+        ('weeklypoll', _('manage a weekly poll')),
+        ('version', _('show version')),
+        ('roll', _('pick a random user')),
+        ('add', _('add game to your collection')),
+        ('list', _('list your games or group games')),
+        ('del', _('remove a game from your collection')),
+        ('play', _('record play')),
+    ]
+
+    for lang in settings.LANGUAGES:
+        logger.info(f'Setting commands for {lang}')
+        await bot.set_my_commands(commands, language_code=lang[0])
+        await sleep(1)
 
 
 class Command(BaseCommand):
