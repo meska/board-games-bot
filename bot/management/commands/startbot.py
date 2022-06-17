@@ -4,6 +4,7 @@ from asyncio import sleep
 
 from django.conf import settings
 from django.core.management import BaseCommand
+from django.utils import translation
 from django.utils.translation import gettext as _
 from telegram import Bot
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, \
@@ -33,6 +34,7 @@ async def set_commands():
 
     for lang in settings.LANGUAGES:
         logger.info(f'Setting commands for {lang}')
+        translation.activate(lang[0])
         await bot.set_my_commands(commands, language_code=lang[0])
         await sleep(1)
 
