@@ -29,7 +29,7 @@ async def add_game(update: Update, context: CallbackContext.DEFAULT_TYPE) -> Non
         # lookup game by BGG by ID
         game_data = await get_game(game)
         if game_data:
-            new = await add_game_db(update.effective_user.id, game_data, update.effective_chat.id)
+            new = await add_game_db(update.effective_user, game_data, update.effective_chat)
             caption = _("Game added:") if new else _("Game updated:")
             await context.bot.send_photo(
                 chat_id=update.effective_chat.id,
@@ -51,7 +51,7 @@ async def add_game(update: Update, context: CallbackContext.DEFAULT_TYPE) -> Non
             keyboard = []
             for game in games[0:10]:
                 keyboard.append([
-                    InlineKeyboardButton(f"[{game.id}] {game.name} ({game.year})",
+                    InlineKeyboardButton(f"{game.name} ({game.year}) - {game.id}",
                                          callback_data={'handler': 'games', 'data': 'add', 'game': game.id})
                 ])
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -119,7 +119,7 @@ async def list_games(update: Update, context: CallbackContext.DEFAULT_TYPE) -> N
             disable_web_page_preview=True,
             parse_mode='Markdown',
             text=label + "\n" + "\n".join(
-                [f"[{game.id}] {game.name} ({game.year}) [link]({game.url})" for game
+                [f"{game.name} ({game.year}) - [{game.id}]({game.url})" for game
                  in games])
         )
         await sleep(5)
