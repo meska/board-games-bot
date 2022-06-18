@@ -6,11 +6,11 @@ from random import randint
 from django.conf import settings
 from django.utils import translation
 from django.utils.translation import gettext as _
-from telegram import Update
+from telegram import ForceReply, Update
 from telegram.constants import ChatAction
 from telegram.ext import CallbackContext, InvalidCallbackData
 
-from bot.models import left_chat_user, new_chat_user
+from bot.models import forget_user, get_user, left_chat_user, new_chat_user
 from polls.models import get_weekly_poll, get_wp_partecipating_users
 
 logger = logging.getLogger(f'gamebot.{__name__}')
@@ -62,6 +62,10 @@ async def handle_replies(update: Update, context: CallbackContext.DEFAULT_TYPE) 
         await handle_score(update, context)
         return
 
+    if context.user_data.get('forgetting'):
+        await handle_forget(update, context)
+        return
+
     query = update.callback_query
     if not query or isinstance(query.data, InvalidCallbackData):
         return
@@ -94,6 +98,64 @@ async def version(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None
 async def handle_dice(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """Handles dice rolls"""
     print(update.effective_chat.id)
+
+
+# noinspection PyUnusedLocal
+async def handle_enroll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+    """
+        Register user in the bot, useful when the bot is addedd later to the group
+    """
+    translation.activate(update.effective_user.language_code)
+
+    await new_chat_user(update.effective_chat, update.effective_user)
+    db_user = await get_user(update.effective_user.id)
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=_(
+            f"""You are now enrolled in GameBot {db_user.name}\nyour telegram id and name will be stored to enable all 
+            functions.\nYou can also use /forget to remove your registration and delete your data."""
+            # parse_mode='Markdown'
+        )
+    )
+
+
+# noinspection PyUnusedLocal
+async def handle_forget(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+    """
+        Forget user data
+    """
+
+    translation.activate(update.effective_user.language_code)
+
+    if context.user_data.get('forgetting') and (
+            update.message.text.lower().strip() == _("yes") or update.message.text.lower().strip() == 'yes'):
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=_("Ok, I will delete your data")
+        )
+        await forget_user(update.effective_user)
+        await context.bot.send_animation(
+            chat_id=update.effective_chat.id,
+            animation="https://tenor.com/view/south-park-and-its-gone-sad-talking-its-finished-gif-17584433"
+        )
+
+        context.user_data.clear()
+    elif context.user_data.get('forgetting'):
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=_("Ok, I will not delete your data")
+        )
+        context.user_data.clear()
+    else:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=_(
+                """Are you sure you want to delete all your data and statistics ?\nthis operation is not reversible.\n
+                Type YES to confirm."""
+            ),
+            reply_markup=ForceReply(selective=True)
+        )
+        context.user_data['forgetting'] = True
 
 
 # noinspection PyUnusedLocal

@@ -1,7 +1,9 @@
 import logging
+from typing import Optional
 
 import telegram
 from django.db import models
+from munch import munchify
 
 from gamebot.decorators import database_sync_to_async
 
@@ -74,8 +76,25 @@ def left_chat_user(chat: telegram.Chat, user: telegram.User) -> bool:
 
 
 @database_sync_to_async
+def forget_user(user: telegram.User) -> bool:
+    logger.info('forget: %s', user.id)
+    User.objects.filter(id=user.id).delete()  # delete users and their games too
+    Chat.objects.filter(id=user.id).delete()  # delete private chats
+    return True
+
+
+@database_sync_to_async
 def my_groups(chat: telegram.Chat, user: telegram.User) -> list:
     u, user_created = cru_user(user)
     cru_chat(chat)
 
     return list(Chat.objects.filter(members=u).values_list('id', 'title'))
+
+
+@database_sync_to_async
+def get_user(user_id: int) -> Optional[dict]:
+    u, user_created = User.objects.get_or_create(id=user_id)
+    return munchify({
+        'id': u.id,
+        'name': u.name if u.name else u.username if u.username else str(u.id),
+    })

@@ -11,7 +11,8 @@ from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandle
     MessageHandler, PollAnswerHandler, \
     filters
 
-from bot.commands import handle_dice, handle_members, handle_query_callback, handle_replies, roll, start, version
+from bot.commands import handle_dice, handle_enroll, handle_forget, handle_members, handle_query_callback, \
+    handle_replies, roll, start, version
 from games.commands import add_game, del_game, handle_play, list_games
 from polls.commands import poll_answer, weeklypoll
 
@@ -32,6 +33,8 @@ async def set_commands():
             ('add', _('add game to your collection')),
             ('list', _('list your games or group games')),
             ('del', _('remove a game from your collection')),
+            ('enroll', _('register yourself')),
+            ('forget', _('forget yourself')),
             ('play', _('record play')),
         ]
         await bot.set_my_commands(commands, language_code=lang[0])
@@ -67,6 +70,8 @@ class Command(BaseCommand):
         app.add_handler(CommandHandler('del', del_game, ))
         app.add_handler(CommandHandler('list', list_games))
         app.add_handler(CommandHandler('play', handle_play))
+        app.add_handler(CommandHandler('enroll', handle_enroll))
+        app.add_handler(CommandHandler('forget', handle_forget))
 
         app.add_handler(PollAnswerHandler(poll_answer))
         app.add_handler(CallbackQueryHandler(handle_query_callback))

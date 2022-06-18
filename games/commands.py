@@ -6,7 +6,7 @@ from django.utils.translation import gettext as _
 from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
-from bot.models import my_groups
+from bot.models import get_user, my_groups
 from games.bgg import get_game, search_game
 from games.models import cru_play, group_games, group_players, my_games
 
@@ -226,7 +226,7 @@ async def handle_play(update: Update, context: CallbackContext.DEFAULT_TYPE) -> 
             else:
                 message = await context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=_(f"No games found in this group.")
+                    text=_(f"No games found in this group.\nadd a game first with /add.")
                 )
                 await sleep(5)
                 await message.delete()
@@ -246,13 +246,13 @@ async def handle_play(update: Update, context: CallbackContext.DEFAULT_TYPE) -> 
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=_("Please choose a player"),
+                    text=_("Please choose a player\nmissing players must user /enroll to be added"),
                     reply_markup=reply_markup,
                 )
             else:
                 message = await context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=_(f"No players found in this group.")
+                    text=_(f"No players found in this group.\nPlease use /enroll to add players")
                 )
                 await sleep(5)
                 await message.delete()
@@ -270,12 +270,15 @@ async def handle_play(update: Update, context: CallbackContext.DEFAULT_TYPE) -> 
                 )
                 context.user_data.clear()
             else:
+
+                player = await get_user(player)
+
                 await context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=_(f"Please write the score of {player} in {game}"),
+                    text=_(f"Please write the score of {player.name} in {game}"),
                     reply_markup=ForceReply(selective=True)
                 )
-                context.user_data['play_score'] = {'player': player, 'game': game, 'group': group}
+                context.user_data['play_score'] = {'player': player.id, 'game': game, 'group': group}
             return
         else:
             return
@@ -286,7 +289,7 @@ async def handle_play(update: Update, context: CallbackContext.DEFAULT_TYPE) -> 
         if not groups:
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=_("You are not in any group. Please join one first.")
+                text=_("You are not in any group. Please join one first.\nOr use /enroll from inside a group.")
             )
             return
         else:
@@ -299,7 +302,7 @@ async def handle_play(update: Update, context: CallbackContext.DEFAULT_TYPE) -> 
             reply_markup = InlineKeyboardMarkup(keyboard)
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=_("Please choose a group"),
+                text=_("Please choose a group\nIf you dont't see your group, use /enroll from inside that group."),
                 reply_markup=reply_markup,
             )
 
