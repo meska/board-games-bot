@@ -340,7 +340,12 @@ async def handle_choose(update: Update, context: CallbackContext.DEFAULT_TYPE) -
 
     """
     translation.activate(update.effective_user.language_code)
+
+
     if not context.args:
+
+        #TODO: choose n. of players from active poll if exists ?
+
         message = await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=_("Please specify number of players after /choose"),
