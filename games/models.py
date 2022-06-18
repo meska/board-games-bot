@@ -57,6 +57,7 @@ class Play(models.Model):
     """
     chat = models.ForeignKey('bot.Chat', on_delete=models.SET_NULL, null=True, blank=True)
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
+    recorded_by = models.ForeignKey('bot.User', on_delete=models.SET_NULL, null=True, blank=True)
     played_date = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -137,7 +138,8 @@ def group_players(chat: telegram.Chat | int, play_id: int = None) -> list:
 
     return [munchify({
         'name': player.name if player.name else player.username if player.username else player.id,
-        'id': player.id
+        'id': player.id,
+        'score': play.playscore_set.filter(user=player).first().score if play_id else None,
     }) for player in players]
 
 
@@ -190,20 +192,32 @@ def update_game(game_data):
 
 
 @database_sync_to_async
-def cru_play(chat_id: int, game_id: int, user_id: int, score: int) -> bool:
+def cru_play(play_id: int, user_id: int, score: int) -> bool:
     """
     Create or update a play
     """
-    logger.info(f'Creating or updating play for chat {chat_id} game {game_id} user {user_id} score {score}')
-    chat, created = Chat.objects.get_or_create(id=chat_id)
-    game = Game.objects.get(id=game_id)
+    logger.info(f'Updating score for  play {play_id} user {user_id} score {score}')
     user = User.objects.get(id=user_id)
-    play, new = Play.objects.get_or_create(chat=chat, game=game)
+    play = Play.objects.get(id=play_id)
     play_score, new = PlayScore.objects.get_or_create(play=play, user=user)
     play_score.score = score
     play_score.save()
 
     return True
+
+
+@database_sync_to_async
+def create_play(chat: telegram.Chat, game_id: int, user: telegram.User) -> int:
+    """
+        Create  a play
+    """
+    logger.info(f'Creating a play for  {chat.id} game {game_id}')
+    chat, created = cru_chat(chat)
+    user, created = cru_user(user)
+    game = Game.objects.get(id=game_id)
+    play = Play(chat=chat, game=game, recorded_by=user)
+    play.save()
+    return play.id
 
 
 @database_sync_to_async

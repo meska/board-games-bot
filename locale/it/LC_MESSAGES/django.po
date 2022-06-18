@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-06-18 11:32+0000\n"
+"POT-Creation-Date: 2022-06-18 13:43+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,7 +22,7 @@ msgstr ""
 msgid "Welcome to Game Night Bot!"
 msgstr ""
 
-#: bot/commands.py:115
+#: bot/commands.py:127
 #, fuzzy, python-brace-format
 #| msgid ""
 #| "You are now enrolled in GameBot {db_user.name}\n"
@@ -40,21 +40,21 @@ msgstr ""
 "Puoi anche usare /forget per rimuovere la registrazione e cancellare i tuoi "
 "dati."
 
-#: bot/commands.py:129
+#: bot/commands.py:143
 #, fuzzy
 #| msgid "Yes"
 msgid "yes"
 msgstr "Sì"
 
-#: bot/commands.py:132
+#: bot/commands.py:146
 msgid "Ok, I will delete your data"
 msgstr "Ok, sto cancellando i tuoi dati"
 
-#: bot/commands.py:144
+#: bot/commands.py:158
 msgid "Ok, I will not delete your data"
 msgstr "Ok, sto non cancellerò i tuoi dati"
 
-#: bot/commands.py:151
+#: bot/commands.py:165
 #, fuzzy
 #| msgid ""
 #| "Are you sure you want to delete all your data and statistics ?\n"
@@ -71,15 +71,15 @@ msgstr ""
 "\n"
 "Scrivi SÌ per confermare."
 
-#: bot/commands.py:188 bot/commands.py:222
+#: bot/commands.py:202 bot/commands.py:230
 msgid "No weekly poll available"
 msgstr "Nessun sondaggio settimanale attivo"
 
-#: bot/commands.py:198
+#: bot/commands.py:210
 msgid "No users participating in the weekly poll, try later"
 msgstr "Nessun utente partecipa al sondaggio settimanale, riprova più tardi"
 
-#: bot/commands.py:205
+#: bot/commands.py:215
 #, python-brace-format
 msgid ""
 "Choosing an user from these:\n"
@@ -90,7 +90,7 @@ msgstr ""
 "\n"
 "{userstable}"
 
-#: bot/commands.py:209
+#: bot/commands.py:219
 msgid "I choose {users[winner]['user_name']}!"
 msgstr "Ho scelto {users[winner]['user_name']}!"
 
@@ -130,6 +130,12 @@ msgstr "cancellati"
 msgid "record play"
 msgstr "registra una partita"
 
+#: bot/management/commands/startbot.py:39
+#, fuzzy
+#| msgid "Please choose a game"
+msgid "choose a game to play"
+msgstr "Scegli un gioco"
+
 #: gamebot/settings.py:137
 msgid "English"
 msgstr "Inglese"
@@ -150,77 +156,77 @@ msgstr "Francese"
 msgid "Spanish"
 msgstr "Spagnolo"
 
-#: games/commands.py:24
+#: games/commands.py:26
 msgid "Please write the name of the game or BGG ID after /add"
 msgstr "Scrivi il nome del gioco o l'ID BGG dopo /add"
 
-#: games/commands.py:40 games/commands.py:165
+#: games/commands.py:42 games/commands.py:174
 msgid "Game added:"
 msgstr "Gioco aggiunto"
 
-#: games/commands.py:40 games/commands.py:165
+#: games/commands.py:42 games/commands.py:174
 msgid "Game updated:"
 msgstr "Gioco aggiornato"
 
-#: games/commands.py:51 games/commands.py:113
+#: games/commands.py:60 games/commands.py:122
 #, python-brace-format
 msgid "Game {game} not found."
 msgstr "Gioco {game} non trovato"
 
-#: games/commands.py:62
+#: games/commands.py:71
 msgid ""
 "Too many results ({len(games)}). Please be more specific.\n"
 "Try using BGG ID or paste bgg game addess\n"
 " Example: /add https://boardgamegeek.com/boardgame/169786/scythe"
 msgstr ""
 
-#: games/commands.py:75 games/commands.py:238
+#: games/commands.py:84 games/commands.py:248
 msgid "Please choose a game"
 msgstr "Scegli un gioco"
 
-#: games/commands.py:81
+#: games/commands.py:90
 #, python-brace-format
 msgid "No games found with query: {game}."
 msgstr "Nessun gioco trovato con la query: {game}."
 
-#: games/commands.py:97
+#: games/commands.py:106
 msgid "Please write the BGG ID  of the game after /del"
 msgstr "Scrivi l'ID BGG del gioco dopo /del"
 
-#: games/commands.py:108
+#: games/commands.py:117
 msgid "Game removed:"
 msgstr "Gioco rimosso"
 
-#: games/commands.py:126
+#: games/commands.py:135
 msgid "My games"
 msgstr "I miei giochi"
 
-#: games/commands.py:129
+#: games/commands.py:138
 msgid "Games in this group"
 msgstr "Giochi in questo gruppo"
 
-#: games/commands.py:145
+#: games/commands.py:154
 msgid "No games found."
 msgstr "Nessun gioco trovato."
 
-#: games/commands.py:175
+#: games/commands.py:184
 msgid "Game {data['game']} not found."
 msgstr "Gioco {data['game']} non trovato."
 
-#: games/commands.py:199 games/commands.py:284
+#: games/commands.py:209
 msgid "Done"
 msgstr "Fatto"
 
-#: games/commands.py:206
+#: games/commands.py:216
 msgid "Chose another a player or click Done to finish"
 msgstr "Scegli un altro giocatore o clicca Fatto per finire"
 
-#: games/commands.py:212
+#: games/commands.py:222
 #, python-brace-format
 msgid "Invalid score: {score}"
 msgstr "Punteggio non valido: {score}"
 
-#: games/commands.py:244
+#: games/commands.py:254
 #, fuzzy
 #| msgid "Games in this group"
 msgid ""
@@ -230,7 +236,7 @@ msgstr ""
 "Nessun gioco trovato in questo gruppo.\n"
 "aggiungi un gioco con /add."
 
-#: games/commands.py:264
+#: games/commands.py:276
 msgid ""
 "Please choose a player\n"
 "missing players must user /enroll to be added"
@@ -238,7 +244,7 @@ msgstr ""
 "Scegli un giocatore\n"
 "i giocatori mancanti devono usare /enroll per essere aggiunti"
 
-#: games/commands.py:270
+#: games/commands.py:282
 #, fuzzy
 #| msgid "Games in this group"
 msgid ""
@@ -248,12 +254,19 @@ msgstr ""
 "Nessun giocatore trovato in questo gruppo.\n"
 "Per favore usa /enroll per aggiungere giocatori"
 
-#: games/commands.py:293
-#, python-brace-format
-msgid "Please write the score of {player.name} in {game}"
+#: games/commands.py:296
+#, fuzzy
+#| msgid "Game removed:"
+msgid "Game recorded"
+msgstr "Gioco registrato"
+
+#: games/commands.py:304
+#, fuzzy, python-brace-format
+#| msgid "Please write the score of {player.name} in {game}"
+msgid "Please write the score of {player.name}"
 msgstr "Scrivi il punteggio di {player.name} in {game}"
 
-#: games/commands.py:307
+#: games/commands.py:318
 msgid ""
 "You are not in any group. Please join one first.\n"
 "Or use /enroll from inside a group."
@@ -261,13 +274,45 @@ msgstr ""
 "Non sei in nessun gruppo. Per favore entra in uno.\n"
 "O usa /enroll da dentro un gruppo."
 
-#: games/commands.py:320
+#: games/commands.py:331
 msgid ""
 "Please choose a group\n"
 "If you dont't see your group, use /enroll from inside that group."
 msgstr ""
 "Scegli un gruppo\n"
 "Se non vedi il tuo gruppo, usa /enroll da dentro quello."
+
+#: games/commands.py:353
+msgid "Please specify number of players after /choose"
+msgstr ""
+
+#: games/commands.py:363
+#, fuzzy
+#| msgid "No games found with query: {game}."
+msgid "No games found to play, buy more"
+msgstr "Nessun gioco trovato con la query: {game}."
+
+#: games/commands.py:370
+msgid "Never"
+msgstr "Mai"
+
+#: games/commands.py:367
+msgid "{} - last play: {} - {}"
+msgstr "{} - ultima volta: {} - {}"
+
+#: games/commands.py:376
+msgid ""
+"Games for {} players:\n"
+"\n"
+"{}"
+msgstr ""
+"Giochi per {} giocatori:\n"
+"\n"
+"{}"
+
+#: games/commands.py:383
+msgid "Invalid number of players"
+msgstr "Numero di giocatori non valido"
 
 #: polls/commands.py:25
 msgid "You must be an administrator of this channel to use this feature."

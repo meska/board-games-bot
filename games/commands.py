@@ -8,9 +8,10 @@ from django.utils.translation import gettext as _
 from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
+from bot.commands import cleanup
 from bot.models import get_user, my_groups
 from games.bgg import get_game, search_game
-from games.models import choose_game, cru_play, group_games, group_players, my_games
+from games.models import choose_game, create_play, cru_play, group_games, group_players, my_games
 
 logger = logging.getLogger(f'gamebot.{__name__}')
 
@@ -193,20 +194,21 @@ async def handle_score(update: Update, context: CallbackContext.DEFAULT_TYPE) ->
     user_data = context.user_data.get('play_score')
     score = update.message.text
     if score.isdigit():
-        await cru_play(user_data.get('group'), user_data.get('game'), user_data.get('player'), int(score))
+        await cru_play(user_data.get('play'), user_data.get('player'), int(score))
         # other users
-        players = await group_players(user_data.get('group'))
+        players = await group_players(user_data.get('group'), user_data.get('play'))
         keyboard = []
         for player in players:
+            score = f" - ({player.score})" if player.score else ""
             keyboard.append([
-                InlineKeyboardButton(f"{player.name}",
+                InlineKeyboardButton(f"{player.name}{score}",
                                      callback_data={'handler': 'play', 'data': 'player', 'player': player.id,
-                                                    'game': user_data.get('game'), 'group': user_data.get('group')})
+                                                    'play': user_data.get('play'), 'group': user_data.get('group')})
             ])
         keyboard.append([
             InlineKeyboardButton(_("Done"),
                                  callback_data={'handler': 'play', 'data': 'player', 'player': -1,
-                                                'game': user_data.get('game'), 'group': user_data.get('group')})
+                                                'play': user_data.get('play')})
         ])
         reply_markup = InlineKeyboardMarkup(keyboard)
         await context.bot.send_message(
@@ -256,15 +258,17 @@ async def handle_play(update: Update, context: CallbackContext.DEFAULT_TYPE) -> 
         elif data.get('data') == 'game':
             game = data.get('game')
             group = data.get('group')
-
             players = await group_players(group)
             if players:
+                # create play on db
+                play_id = await create_play(update.effective_chat, game, update.effective_user)
+
                 keyboard = []
                 for player in players:
                     keyboard.append([
                         InlineKeyboardButton(f"{player.name}",
                                              callback_data={'handler': 'play', 'data': 'player', 'player': player.id,
-                                                            'game': game, 'group': group})
+                                                            'play': play_id, 'group': group})
                     ])
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await context.bot.send_message(
@@ -281,27 +285,26 @@ async def handle_play(update: Update, context: CallbackContext.DEFAULT_TYPE) -> 
                 await message.delete()
         elif data.get('data') == 'player':
             player = data.get('player')
-            game = data.get('game')
+            play = data.get('play')
             group = data.get('group')
             # ask for score
 
             if player == -1:
                 # done
-                await context.bot.send_message(
+                msg = await context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=_("Done"),
+                    text=_("Game recorded"),
                 )
                 context.user_data.clear()
+                await cleanup(10, [msg, update.callback_query.message])
             else:
-
                 player = await get_user(player)
-
                 await context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=_(f"Please write the score of {player.name} in {game}"),
+                    text=_(f"Please write the score of {player.name}"),
                     reply_markup=ForceReply(selective=True)
                 )
-                context.user_data['play_score'] = {'player': player.id, 'game': game, 'group': group}
+                context.user_data['play_score'] = {'player': player.id, 'play': play, 'group': group}
             return
         else:
             return
@@ -341,10 +344,9 @@ async def handle_choose(update: Update, context: CallbackContext.DEFAULT_TYPE) -
     """
     translation.activate(update.effective_user.language_code)
 
-
     if not context.args:
 
-        #TODO: choose n. of players from active poll if exists ?
+        # TODO: choose n. of players from active poll if exists ?
 
         message = await context.bot.send_message(
             chat_id=update.effective_chat.id,
