@@ -25,6 +25,18 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=update.effective_chat.id, text=_("Welcome to Game Night Bot!"))
 
 
+async def cleanup(time: int, messages: list) -> None:
+    """
+        Delete messages after a certain time
+    """
+    await sleep(time)
+    for message in messages:
+        try:
+            await message.delete()
+        except Exception as e:
+            logger.error(f"Unable to clenup message {message.message_id} - {e}")
+
+
 async def handle_query_callback(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """
         Query Callback router
@@ -109,12 +121,14 @@ async def handle_enroll(update: Update, context: CallbackContext.DEFAULT_TYPE) -
 
     await new_chat_user(update.effective_chat, update.effective_user)
     db_user = await get_user(update.effective_user.id)
-    await context.bot.send_message(
+    message = await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=_(
             f"You are now enrolled in GameBot {db_user.name}\nyour telegram id and name will be stored to enable all functions.\nYou can also use /forget to remove your registration and delete your data."
         )
     )
+
+    await cleanup(10, [update.message, message])
 
 
 # noinspection PyUnusedLocal
@@ -187,9 +201,7 @@ async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
             chat_id=update.effective_chat.id,
             text=_("No weekly poll available")
         )
-        await sleep(3)
-        await msg.delete()
-        await update.message.delete()
+        await cleanup(10, [msg, update.message])
         return
     users = await get_wp_partecipating_users(wp.id)  # get poll users
     if not users:
@@ -197,9 +209,7 @@ async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
             chat_id=update.effective_chat.id,
             text=_("No users participating in the weekly poll, try later")
         )
-        await sleep(3)
-        await msg.delete()
-        await update.message.delete()
+        await cleanup(10, [msg, update.message])
         return
     userstable = "\n".join([user['user_name'] for user in users])
     msg = await context.bot.send_message(update.effective_chat.id, _(f"Choosing an user from these:\n\n{userstable}"))
@@ -207,9 +217,7 @@ async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     await sleep(2)
     winner = randint(0, len(users) - 1)
     await msg.edit_text(text=_(f"I choose {users[winner]['user_name']}!"))
-    await sleep(30)
-    await msg.delete()
-    await update.message.delete()
+    await cleanup(30, [msg, update.message])
 
 
 async def roll_deprecated(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
@@ -240,3 +248,5 @@ async def roll_deprecated(update: Update, context: CallbackContext.DEFAULT_TYPE)
             winner_user = user
 
     await context.bot.send_message(update.effective_chat.id, f"{winner_user['user_name']} wins!")
+
+    await cleanup(10, [update.message])
