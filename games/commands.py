@@ -39,13 +39,20 @@ async def add_game(update: Update, context: CallbackContext.DEFAULT_TYPE) -> Non
         if game_data:
             new = await add_game_db(update.effective_user, game_data, update.effective_chat)
             caption = _("Game added:") if new else _("Game updated:")
-            await context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                parse_mode='Markdown',
-                photo=game_data.thumbnail,
-                caption=caption + f" [{game_data.name}]({game_data.url})"
-            )
-
+            if game_data.thumbnail:
+                await context.bot.send_photo(
+                    chat_id=update.effective_chat.id,
+                    parse_mode='Markdown',
+                    photo=game_data.thumbnail,
+                    caption=caption + f" [{game_data.name}]({game_data.url})"
+                )
+            else:
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    parse_mode='Markdown',
+                    text=caption + f" [{game_data.name}]({game_data.url})",
+                    disable_web_page_preview=True
+                )
         else:
             message = await context.bot.send_message(
                 chat_id=update.effective_chat.id,

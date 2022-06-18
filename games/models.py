@@ -24,7 +24,7 @@ class Game(models.Model):
     """
     id = models.BigIntegerField(primary_key=True)  # Board Games Geek ID
     name = models.CharField(max_length=255)
-    thumbnail = models.CharField(max_length=255)
+    thumbnail = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=255)
     playingtime = models.IntegerField(default=0)
     suggested_players = models.CharField(max_length=5, default='')
