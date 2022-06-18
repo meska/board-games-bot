@@ -112,9 +112,7 @@ async def handle_enroll(update: Update, context: CallbackContext.DEFAULT_TYPE) -
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=_(
-            f"""You are now enrolled in GameBot {db_user.name}\nyour telegram id and name will be stored to enable all 
-            functions.\nYou can also use /forget to remove your registration and delete your data."""
-            # parse_mode='Markdown'
+            f"You are now enrolled in GameBot {db_user.name}\nyour telegram id and name will be stored to enable all functions.\nYou can also use /forget to remove your registration and delete your data."
         )
     )
 
@@ -150,8 +148,7 @@ async def handle_forget(update: Update, context: CallbackContext.DEFAULT_TYPE) -
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=_(
-                """Are you sure you want to delete all your data and statistics ?\nthis operation is not reversible.\n
-                Type YES to confirm."""
+                "Are you sure you want to delete all your data and statistics ?\nthis operation is not reversible.\nType YES to confirm."
             ),
             reply_markup=ForceReply(selective=True)
         )

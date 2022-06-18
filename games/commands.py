@@ -1,4 +1,5 @@
 import logging
+import re
 from asyncio import sleep
 
 from django.utils import translation
@@ -25,6 +26,12 @@ async def add_game(update: Update, context: CallbackContext.DEFAULT_TYPE) -> Non
         return
 
     game = context.args[0]
+
+    # check for game address
+    match = re.match(r'^(https?://)?(www\.)?(bgg|boardgamegeek).com/boardgame/(?P<id>\d+)/?([\w-]+)?$', game)
+    if match:
+        game = match.groupdict().get('id')
+
     if game.isdigit():
         # lookup game by BGG by ID
         game_data = await get_game(game)
@@ -48,18 +55,26 @@ async def add_game(update: Update, context: CallbackContext.DEFAULT_TYPE) -> Non
     else:
         games = await search_game(game)
         if games:
-            keyboard = []
-            for game in games[0:10]:
-                keyboard.append([
-                    InlineKeyboardButton(f"{game.name} ({game.year}) - {game.id}",
-                                         callback_data={'handler': 'games', 'data': 'add', 'game': game.id})
-                ])
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=_("Please choose a game"),
-                reply_markup=reply_markup,
-            )
+            if len(games) > 25:
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=_(
+                        f"Too many results ({len(games)}). Please be more specific.\nTry using BGG ID or paste bgg game addess\n Example: /add https://boardgamegeek.com/boardgame/169786/scythe"),
+                    disable_web_page_preview=True,
+                )
+            else:
+                keyboard = []
+                for game in games[0:25]:
+                    keyboard.append([
+                        InlineKeyboardButton(f"{game.name} ({game.year}) - {game.id}",
+                                             callback_data={'handler': 'games', 'data': 'add', 'game': game.id})
+                    ])
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=_("Please choose a game"),
+                    reply_markup=reply_markup,
+                )
         else:
             message = await context.bot.send_message(
                 chat_id=update.effective_chat.id,
