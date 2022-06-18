@@ -10,9 +10,11 @@ bot: http://t.me/boardgames_bot
 - Automatic Weekly survey of partecipating players
 - Simple /roll for chose first player
 - Manage personal and group game library
+- Record game plays
+- choose a game from library based on n. of players
+- BGG API integration
 
 ## Planned Features
-- Group game management
 - Leaderboard
-  - BGG integration
+- Plays statistics
 
