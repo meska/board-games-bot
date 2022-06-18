@@ -62,7 +62,7 @@ async def get_game(game_id: int) -> Optional[object]:
                         "rating": game_data['items']['item']['statistics']['ratings']['average']['@value'],
                         "playingtime": game_data['items']['item']['playingtime']['@value'],
                         "suggested_players": extract_suggested(game_data),
-                        "thumbnail": game_data['items']['item']['thumbnail'],
+                        "thumbnail": game_data['items']['item'].get('thumbnail'),
                         "url": f"https://boardgamegeek.com/{game_data['items']['item']['@type']}/{game_data['items']['item']['@id']}"
                     })
                 return None
