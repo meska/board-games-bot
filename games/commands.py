@@ -2,6 +2,7 @@ import logging
 import re
 from asyncio import sleep
 
+import pendulum
 from django.utils import translation
 from django.utils.translation import gettext as _
 from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -9,7 +10,7 @@ from telegram.ext import CallbackContext
 
 from bot.models import get_user, my_groups
 from games.bgg import get_game, search_game
-from games.models import cru_play, group_games, group_players, my_games
+from games.models import choose_game, cru_play, group_games, group_players, my_games
 
 logger = logging.getLogger(f'gamebot.{__name__}')
 
@@ -321,4 +322,50 @@ async def handle_play(update: Update, context: CallbackContext.DEFAULT_TYPE) -> 
                 reply_markup=reply_markup,
             )
 
-    # choose game from your library
+
+async def handle_choose(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
+    """
+        Choose a game to play
+
+        Propose a game to the user searching from the list of games added to the group
+        then fiter for number of players
+        then order for last played
+
+    """
+    translation.activate(update.effective_user.language_code)
+    if not context.args:
+        message = await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=_("Please specify number of players after /choose"),
+        )
+    else:
+        try:
+            number_of_players = int(context.args[0])
+
+            games = await choose_game(update.effective_chat, update.effective_user, number_of_players)
+            if not games:
+                message = await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=_("No games found to play, buy more"),
+                )
+            else:
+                gamelist = [
+                    _("{} - last play: {} - {}".format(
+                        x.name,
+                        x.last_played.format('DD/MM/YY') if x.last_played > pendulum.datetime(1980, 1, 1) else _(
+                            "Never"),
+                        " ".join(x.last_users)
+                    )) for x in games]
+
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=_("Games for {} players:\n\n{}".format(number_of_players, "\n".join(gamelist))),
+
+                )
+
+        except ValueError:
+            message = await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=_("Invalid number of players"),
+            )
+            return

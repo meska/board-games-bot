@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import logging
+from typing import Optional
 
+import pendulum
 import telegram
 from django.db import models
 # Create your models here.
+from django.db.models import QuerySet
 from django.utils.text import slugify
 from munch import Munch, munchify
+from pendulum import DateTime
 
 from bot.models import Chat, User, cru_chat, cru_user
 from gamebot.decorators import database_sync_to_async
@@ -34,6 +38,15 @@ class Game(models.Model):
     def url(self):
         return f"https://boardgamegeek.com/{self.type}/{self.id}/{slugify(self.name)}"
 
+    def last_played_from_users(self, users: QuerySet) -> [DateTime, list]:
+        """
+        Return the last played date from a group of users
+        """
+        last_played = PlayScore.objects.filter(play__game=self, user__in=users).order_by('-play__played_date').first()
+        if last_played:
+            return pendulum.instance(last_played.play.played_date), last_played.play.users
+        return pendulum.datetime(1970, 1, 1), []
+
     def __str__(self):
         return self.name
 
@@ -46,6 +59,10 @@ class Play(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     played_date = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+
+    @property
+    def users(self):
+        return [x.user for x in self.playscore_set.all()]
 
 
 class PlayScore(models.Model):
@@ -173,7 +190,7 @@ def update_game(game_data):
 
 
 @database_sync_to_async
-def cru_play(chat_id: int, game_id: int, user_id: int, score: int) -> Play:
+def cru_play(chat_id: int, game_id: int, user_id: int, score: int) -> bool:
     """
     Create or update a play
     """
@@ -187,3 +204,27 @@ def cru_play(chat_id: int, game_id: int, user_id: int, score: int) -> Play:
     play_score.save()
 
     return True
+
+
+@database_sync_to_async
+def choose_game(chat: telegram.Chat, player: telegram.User, players: int) -> Optional[list]:
+    """
+    Propose a game to the user searching from the list of games added to the group
+    then fiter for number of players
+    then order for last played
+    """
+    logger.info(f'Choosing game for chat {chat.id} player {player.id} players {players}')
+    users = Chat.objects.get(id=chat.id).members.all()
+    games = [x.game for x in UserGame.objects.filter(user__in=users)]
+    games = [game for game in games if game.min_players <= players <= game.max_players]
+    games = sorted(games, key=lambda x: x.last_played_from_users(users)[0], reverse=True)
+    if games:
+        return [munchify({
+            'name': game.name,
+            'id': game.id,
+            'year': game.year,
+            'url': game.url,
+            'last_played': game.last_played_from_users(users)[0],
+            'last_users': [f"@{x.username}" for x in game.last_played_from_users(users)[1]],
+        }) for game in games]
+    return None

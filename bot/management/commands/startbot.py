@@ -13,7 +13,7 @@ from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandle
 
 from bot.commands import handle_dice, handle_enroll, handle_forget, handle_members, handle_query_callback, \
     handle_replies, roll, start, version
-from games.commands import add_game, del_game, handle_play, list_games
+from games.commands import add_game, del_game, handle_choose, handle_play, list_games
 from polls.commands import poll_answer, weeklypoll
 
 logger = logging.getLogger(f'gamebot.{__name__}')
@@ -36,6 +36,7 @@ async def set_commands():
             ('enroll', _('register yourself')),
             ('forget', _('forget yourself')),
             ('play', _('record play')),
+            ('choose', _('choose a game to play')),
         ]
         await bot.set_my_commands(commands, language_code=lang[0])
         await sleep(1)
@@ -72,6 +73,7 @@ class Command(BaseCommand):
         app.add_handler(CommandHandler('play', handle_play))
         app.add_handler(CommandHandler('enroll', handle_enroll))
         app.add_handler(CommandHandler('forget', handle_forget))
+        app.add_handler(CommandHandler('choose', handle_choose))
 
         app.add_handler(PollAnswerHandler(poll_answer))
         app.add_handler(CallbackQueryHandler(handle_query_callback))
