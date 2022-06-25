@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
-
 import pendulum
 import telegram
 from django.db import models
@@ -11,6 +9,7 @@ from django.db.models import QuerySet
 from django.utils.text import slugify
 from munch import Munch, munchify
 from pendulum import DateTime
+from typing import Optional
 
 from bot.models import Chat, User, cru_chat, cru_user
 from gamebot.decorators import database_sync_to_async
@@ -139,7 +138,7 @@ def group_players(chat: telegram.Chat | int, play_id: int = None) -> list:
     return [munchify({
         'name': player.name if player.name else player.username if player.username else player.id,
         'id': player.id,
-        'score': play.playscore_set.filter(user=player).first().score if play_id else None,
+        'score': play.playscore_set.filter(user=player).first().score if play.playscore_set.filter(user=player).first() and play_id else None,
     }) for player in players]
 
 
