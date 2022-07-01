@@ -1,8 +1,7 @@
 import logging
+import pendulum
 import re
 from asyncio import sleep
-
-import pendulum
 from django.utils import translation
 from django.utils.translation import gettext as _
 from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -184,7 +183,7 @@ async def handle_games(update: Update, context: CallbackContext.DEFAULT_TYPE) ->
                 text=_(f"Game {data['game']} not found.")
             )
 
-    await update.callback_query.message.delete()
+    cleanup(5, [update.callback_query.message])
 
 
 async def handle_score(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
