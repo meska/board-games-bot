@@ -20,8 +20,11 @@ async def new_poll(chat_id, title, answers):
 
 async def stop_poll(chat_id, message_id):
     bot = Bot(settings.TELEGRAM_TOKEN)
-    await bot.stop_poll(chat_id, message_id)
-    await bot.unpin_chat_message(chat_id, message_id)
+    try:
+        await bot.stop_poll(chat_id, message_id)
+        await bot.unpin_chat_message(chat_id, message_id)
+    except BadRequest:
+        logger.warning(f'Poll {message_id} already stopped')
 
 
 @job

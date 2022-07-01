@@ -8,3 +8,13 @@ migrate:
 
 rqstats:
 	@docker-compose run --rm web python manage.py rqstats
+
+
+# cleanup icloud sync duplicates
+cleandupes:
+	@find . -regex '.* 2\..*' -delete -print;\
+	find . -regex '.* 2' -delete -print;
+	@find . -regex '.* 3\..*' -delete -print;\
+    find . -regex '.* 3' -delete -print;
+	@find . -regex '.* 4\..*' -delete -print;\
+	find . -regex '.* 4' -delete -print;
