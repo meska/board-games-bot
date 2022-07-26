@@ -13,7 +13,9 @@ logger = logging.getLogger(f'gamebot.{__name__}')
 
 async def new_poll(chat_id, title, answers):
     bot = Bot(settings.TELEGRAM_TOKEN)
-    poll = await bot.send_poll(chat_id, title, answers, is_anonymous=False)
+    if not answers:
+        answers = [_('Yes'), _('No')]
+    poll = await bot.send_poll(chat_id, title.strip(), answers, is_anonymous=False)
     await bot.pin_chat_message(chat_id, poll.message_id)
     return poll.poll.id, poll.message_id
 
