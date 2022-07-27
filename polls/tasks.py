@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django_rq import get_queue, job
 from pendulum import Date
+from sentry_sdk import capture_exception
 from telegram import Bot
 
 logger = logging.getLogger(f'gamebot.{__name__}')
@@ -25,7 +26,8 @@ async def stop_poll(chat_id, message_id):
     try:
         await bot.stop_poll(chat_id, message_id)
         await bot.unpin_chat_message(chat_id, message_id)
-    except BadRequest:
+    except Exception as e:
+        capture_exception(e)
         logger.warning(f'Poll {message_id} already stopped')
 
 
