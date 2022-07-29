@@ -4,6 +4,7 @@ import logging
 import pendulum
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.translation import gettext as _
 from django_rq import get_queue, job
 from pendulum import Date
 from sentry_sdk import capture_exception
@@ -29,6 +30,7 @@ async def stop_poll(chat_id, message_id):
     except Exception as e:
         capture_exception(e)
         logger.warning(f'Poll {message_id} already stopped')
+
 
 @job
 def update_weekly_poll(poll_id):
