@@ -30,7 +30,6 @@ async def stop_poll(chat_id, message_id):
         capture_exception(e)
         logger.warning(f'Poll {message_id} already stopped')
 
-
 @job
 def update_weekly_poll(poll_id):
     from polls.models import WeeklyPoll
@@ -51,7 +50,7 @@ def update_weekly_poll(poll_id):
             # poll is overdue, stop and unpin
             loop = asyncio.get_event_loop()
             coroutine = stop_poll(wp.chat_id, wp.message_id)
-            poll_id, message_id = loop.run_until_complete(coroutine)
+            loop.run_until_complete(coroutine)
 
             wp.message_id = None
             wp.poll_date = None
