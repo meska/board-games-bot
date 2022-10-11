@@ -77,7 +77,12 @@ def update_weekly_poll(poll_id):
 
         loop = asyncio.get_event_loop()
         coroutine = new_poll(wp.chat_id, poll_question, wp.answers)
-        message_poll_id, message_id = loop.run_until_complete(coroutine)
+        try:
+            message_poll_id, message_id = loop.run_until_complete(coroutine)
+        except Exception as e:
+            capture_exception(e)
+            logger.error(f'error creating poll: {e}')
+            return False
 
         wp.poll_id = message_poll_id
         wp.message_id = message_id
