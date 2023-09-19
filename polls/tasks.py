@@ -11,13 +11,13 @@ from sentry_sdk import capture_exception
 from telegram import Bot
 from telegram.error import Forbidden
 
-logger = logging.getLogger(f'gamebot.{__name__}')
+logger = logging.getLogger(f"gamebot.{__name__}")
 
 
 async def new_poll(chat_id, title, answers):
     bot = Bot(settings.TELEGRAM_TOKEN)
     if not answers:
-        answers = [_('Yes'), _('No')]
+        answers = [_("Yes"), _("No")]
     poll = await bot.send_poll(chat_id, title.strip(), answers, is_anonymous=False)
     await bot.pin_chat_message(chat_id, poll.message_id)
     return poll.poll.id, poll.message_id
@@ -30,17 +30,18 @@ async def stop_poll(chat_id, message_id):
         await bot.unpin_chat_message(chat_id, message_id)
     except Exception as e:
         capture_exception(e)
-        logger.warning(f'Poll {message_id} already stopped')
+        logger.warning(f"Poll {message_id} already stopped")
 
 
 @job
 def update_weekly_poll(poll_id):
     from polls.models import WeeklyPoll
-    logger.debug(f'start update_weekly_poll({poll_id})')
+
+    logger.debug(f"start update_weekly_poll({poll_id})")
     try:
         wp = WeeklyPoll.objects.get(id=poll_id)
     except ObjectDoesNotExist:
-        logger.error(f'weekly poll {poll_id} not found')
+        logger.error(f"weekly poll {poll_id} not found")
         return False
 
     diff = pendulum.now().date().diff(wp.poll_date, False).days
@@ -66,13 +67,15 @@ def update_weekly_poll(poll_id):
 
     if diff < 7 and not wp.message_id:
         # create the poll on telegram
-        date: Date = pendulum.date(wp.poll_date.year, wp.poll_date.month, wp.poll_date.day)
+        date: Date = pendulum.date(
+            wp.poll_date.year, wp.poll_date.month, wp.poll_date.day
+        )
 
         try:
-            formatted_date = date.format('dddd D/M', wp.lang)
+            formatted_date = date.format("dddd D/M", wp.lang)
         except ValueError:
             # fallback to english
-            formatted_date = date.format('dddd D/M', 'en')
+            formatted_date = date.format("dddd D/M", "en")
 
         poll_question = f"{wp.question_prefix} {formatted_date.title()}"[0:255]
 
@@ -86,7 +89,7 @@ def update_weekly_poll(poll_id):
             return False
         except Exception as e:
             capture_exception(e)
-            logger.error(f'error creating poll: {e}')
+            logger.error(f"error creating poll: {e}")
             return False
 
         wp.poll_id = message_poll_id
@@ -94,14 +97,12 @@ def update_weekly_poll(poll_id):
         updated = True
 
     if updated:
-        logger.debug(f'update_weekly_poll({poll_id})')
+        logger.debug(f"update_weekly_poll({poll_id})")
         WeeklyPoll.objects.filter(id=poll_id).update(
-            poll_id=wp.poll_id,
-            message_id=wp.message_id,
-            poll_date=wp.poll_date
+            poll_id=wp.poll_id, message_id=wp.message_id, poll_date=wp.poll_date
         )
     else:
-        logger.debug(f'update_weekly_poll({poll_id}) - nothing to do')
+        logger.debug(f"update_weekly_poll({poll_id}) - nothing to do")
 
 
 @job
@@ -111,8 +112,9 @@ def sync_polls():
     :return:
     :rtype:
     """
-    logger.debug('sync_polls() started')
+    logger.debug("sync_polls() started")
     from polls.models import WeeklyPoll
+
     for wp in WeeklyPoll.objects.all():
         job_id = f"update_weekly_poll_{wp.chat_id}"
         poll_job = get_queue().fetch_job(job_id)

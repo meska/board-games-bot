@@ -1,5 +1,6 @@
 import pytz
 from django.conf import settings
+from django.core.cache import cache
 from django.utils import timezone
 from django_rq import job, queues
 from pipenv.vendor.dateutil.relativedelta import relativedelta
@@ -91,3 +92,17 @@ def recover_jobs():
         q = queues.get_queue(q_name)
         clean_or_recover_errors(q, q.failed_job_registry.get_job_ids())
         clean_deferreds(q, q.deferred_job_registry.get_job_ids())
+
+@job
+def healthcheck():
+    # Task che aggiorna una variabile in redis con l'orario di esecuzione per ogni coda
+    # Se la variabile non viene aggiornata per più di 5 minuti, il task scheduler va riavviato dall'healthcheck docker
+    from django.conf import settings
+
+    for queue_name in settings.RQ_QUEUES:
+        queue = queues.get_queue(queue_name)
+        queue.enqueue(store_healtcheck, queue_name, at_front=True)
+
+@job
+def store_healtcheck(queue):
+    cache.set(f"healthcheck_{queue}", timezone.now(), 60 * 60 * 24)
