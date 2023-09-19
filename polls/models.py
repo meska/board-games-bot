@@ -31,6 +31,7 @@ class WeeklyPoll(models.Model):
     answers = ArrayField(models.CharField(max_length=50), default=list)
     poll_date = models.DateField(null=True, blank=True)
     errors = models.IntegerField(default=0)
+    active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.chat_id} - {self.weekday}"

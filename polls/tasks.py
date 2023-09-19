@@ -7,9 +7,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext as _
 from django_rq import get_queue, job
 from pendulum import Date
-from sentry_sdk import capture_exception
+from sentry_sdk import capture_exception, capture_message, push_scope
 from telegram import Bot
-from telegram.error import Forbidden
 
 logger = logging.getLogger(f"gamebot.{__name__}")
 
@@ -43,6 +42,20 @@ def update_weekly_poll(poll_id):
     except ObjectDoesNotExist:
         logger.error(f"weekly poll {poll_id} not found")
         return False
+
+    if not wp.active:
+        logger.debug(f"weekly poll {poll_id} not active")
+        return False
+
+    if wp.errors > 10:
+        with push_scope() as scope:
+            scope.set_extra("wp", wp)
+            capture_message(
+                f"weekly poll {poll_id} has too many errors", level="warning", scope=scope
+            )
+        WeeklyPoll.objects.filter(id=poll_id).update(active=False)
+        return False
+
 
     diff = pendulum.now().date().diff(wp.poll_date, False).days
 
@@ -83,11 +96,8 @@ def update_weekly_poll(poll_id):
         coroutine = new_poll(wp.chat_id, poll_question, wp.answers)
         try:
             message_poll_id, message_id = loop.run_until_complete(coroutine)
-        except Forbidden as e:
-            # user has blocked the bot, bye bye poll !
-            wp.delete()
-            return False
         except Exception as e:
+            WeeklyPoll.objects.filter(id=poll_id).update(errors=wp.errors+1)
             capture_exception(e)
             logger.error(f"error creating poll: {e}")
             return False
@@ -115,7 +125,7 @@ def sync_polls():
     logger.debug("sync_polls() started")
     from polls.models import WeeklyPoll
 
-    for wp in WeeklyPoll.objects.all():
+    for wp in WeeklyPoll.objects.filter(active=True):
         job_id = f"update_weekly_poll_{wp.chat_id}"
         poll_job = get_queue().fetch_job(job_id)
         if not poll_job:
