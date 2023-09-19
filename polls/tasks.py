@@ -9,6 +9,7 @@ from django_rq import get_queue, job
 from pendulum import Date
 from sentry_sdk import capture_exception
 from telegram import Bot
+from telegram.error import Forbidden
 
 logger = logging.getLogger(f'gamebot.{__name__}')
 
@@ -79,6 +80,10 @@ def update_weekly_poll(poll_id):
         coroutine = new_poll(wp.chat_id, poll_question, wp.answers)
         try:
             message_poll_id, message_id = loop.run_until_complete(coroutine)
+        except Forbidden as e:
+            # user has blocked the bot, bye bye poll !
+            wp.delete()
+            return False
         except Exception as e:
             capture_exception(e)
             logger.error(f'error creating poll: {e}')
