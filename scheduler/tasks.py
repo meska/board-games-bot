@@ -1,9 +1,10 @@
+from datetime import timedelta
+
 import pytz
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 from django_rq import job, queues
-from pipenv.vendor.dateutil.relativedelta import relativedelta
 from rq.exceptions import NoSuchJobError
 from sentry_sdk import capture_exception
 
@@ -18,12 +19,12 @@ def clean_or_recover_errors(queue, jobs_id):
                 job_to_recover.delete()
 
             if job_to_recover.ended_at and tz.localize(job_to_recover.ended_at) < (
-                    timezone.now() + relativedelta(hours=-1)):
+                    timezone.now() + timedelta(hours=-1)):
                 print(f"Recovering Job {job_to_recover}")
                 job_to_recover.requeue()
 
             if job_to_recover.enqueued_at and tz.localize(job_to_recover.enqueued_at) < (
-                    timezone.now() + relativedelta(hours=-2)):
+                    timezone.now() + timedelta(hours=-2)):
                 print(f"Recovering Job {job_to_recover}")
                 job_to_recover.requeue()
         else:
@@ -37,7 +38,7 @@ def clean_deferreds(queue, jobs_id):
         # considero solo i più vecchi di 3 ore
         scheduled_job = queue.fetch_job(job_id)
         if scheduled_job:
-            if tz.localize(scheduled_job.created_at) < (timezone.now() + relativedelta(hours=-3)):
+            if tz.localize(scheduled_job.created_at) < (timezone.now() + timedelta(hours=-3)):
                 try:
                     father = scheduled_job.dependency
                     print(father)
@@ -55,7 +56,7 @@ def clean_deferreds(queue, jobs_id):
                     try:
                         father = father.dependency
                         print(father)
-                        if tz.localize(scheduled_job.created_at) < (timezone.now() + relativedelta(hours=-6)):
+                        if tz.localize(scheduled_job.created_at) < (timezone.now() + timedelta(hours=-6)):
                             # se è più vecchio di 6 ore lo eseguo comunque
                             print(f"Recovering deferred ( 6 ore ) job: {father}")
                             try:
