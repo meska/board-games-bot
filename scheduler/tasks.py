@@ -102,15 +102,13 @@ def healthcheck():
     rq_queues = [x for x in settings.RQ_QUEUES]
     for queue_name in rq_queues:
         queue = queues.get_queue(queue_name)
-        print(f"Enqueueing Healthcheck {queue_name}")
         queue.enqueue(store_healtcheck, queue_name, at_front=True)
 
 @job
 def store_healtcheck(queue):
-    print(f"Storing Healthcheck {queue}")
     res = cache.set(f"healthcheck_{queue}", timezone.now(), 60 * 60 * 24)
     if not res:
-        print(f"Error storing Healthcheck {queue}")
         capture_exception(Exception(f"Error storing Healthcheck {queue}"))
+        return f"Error storing Healthcheck {queue}"
     else:
-        print(f"Healthcheck {queue} stored")
+        return f"Healthcheck {queue} stored"
