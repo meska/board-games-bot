@@ -1,6 +1,5 @@
-from datetime import timedelta
-
 import pytz
+from datetime import timedelta
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
@@ -99,11 +98,19 @@ def healthcheck():
     # Task che aggiorna una variabile in redis con l'orario di esecuzione per ogni coda
     # Se la variabile non viene aggiornata per più di 5 minuti, il task scheduler va riavviato dall'healthcheck docker
     from django.conf import settings
-
-    for queue_name in settings.RQ_QUEUES:
+    print("Healthcheck")
+    rq_queues = [x for x in settings.RQ_QUEUES]
+    for queue_name in rq_queues:
         queue = queues.get_queue(queue_name)
+        print(f"Enqueueing Healthcheck {queue_name}")
         queue.enqueue(store_healtcheck, queue_name, at_front=True)
 
 @job
 def store_healtcheck(queue):
-    cache.set(f"healthcheck_{queue}", timezone.now(), 60 * 60 * 24)
+    print(f"Storing Healthcheck {queue}")
+    res = cache.set(f"healthcheck_{queue}", timezone.now(), 60 * 60 * 24)
+    if not res:
+        print(f"Error storing Healthcheck {queue}")
+        capture_exception(Exception(f"Error storing Healthcheck {queue}"))
+    else:
+        print(f"Healthcheck {queue} stored")
