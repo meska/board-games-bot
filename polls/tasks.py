@@ -1,4 +1,5 @@
 import asyncio
+from datetime import timedelta
 import logging
 
 import pendulum
@@ -50,12 +51,9 @@ def update_weekly_poll(poll_id):
     if wp.errors > 10:
         with push_scope() as scope:
             scope.set_extra("wp", wp)
-            capture_message(
-                f"weekly poll {poll_id} has too many errors", level="warning", scope=scope
-            )
+            capture_message(f"weekly poll {poll_id} has too many errors", level="warning", scope=scope)
         WeeklyPoll.objects.filter(id=poll_id).update(active=False)
         return False
-
 
     diff = pendulum.now().date().diff(wp.poll_date, False).days
 
@@ -80,9 +78,7 @@ def update_weekly_poll(poll_id):
 
     if diff < 7 and not wp.message_id:
         # create the poll on telegram
-        date: Date = pendulum.date(
-            wp.poll_date.year, wp.poll_date.month, wp.poll_date.day
-        )
+        date: Date = pendulum.date(wp.poll_date.year, wp.poll_date.month, wp.poll_date.day)
 
         try:
             formatted_date = date.format("dddd D/M", wp.lang)
@@ -97,7 +93,7 @@ def update_weekly_poll(poll_id):
         try:
             message_poll_id, message_id = loop.run_until_complete(coroutine)
         except Exception as e:
-            WeeklyPoll.objects.filter(id=poll_id).update(errors=wp.errors+1)
+            WeeklyPoll.objects.filter(id=poll_id).update(errors=wp.errors + 1)
             capture_exception(e)
             logger.error(f"error creating poll: {e}")
             return False
@@ -108,9 +104,7 @@ def update_weekly_poll(poll_id):
 
     if updated:
         logger.debug(f"update_weekly_poll({poll_id})")
-        WeeklyPoll.objects.filter(id=poll_id).update(
-            poll_id=wp.poll_id, message_id=wp.message_id, poll_date=wp.poll_date
-        )
+        WeeklyPoll.objects.filter(id=poll_id).update(poll_id=wp.poll_id, message_id=wp.message_id, poll_date=wp.poll_date)
     else:
         logger.debug(f"update_weekly_poll({poll_id}) - nothing to do")
 
@@ -125,11 +119,15 @@ def sync_polls():
     logger.debug("sync_polls() started")
     from polls.models import WeeklyPoll
 
-    for wp in WeeklyPoll.objects.filter(active=True):
-        job_id = f"update_weekly_poll_{wp.chat_id}"
-        poll_job = get_queue().fetch_job(job_id)
-        if not poll_job:
-            update_weekly_poll.delay(wp.id, job_id=job_id)
-        if poll_job and not poll_job.is_queued:
-            poll_job.delete()
-            update_weekly_poll.delay(wp.id, job_id=job_id)
+    try:
+        for wp in WeeklyPoll.objects.filter(active=True):
+            job_id = f"update_weekly_poll_{wp.chat_id}"
+            poll_job = get_queue().fetch_job(job_id)
+            if not poll_job:
+                update_weekly_poll.delay(wp.id, job_id=job_id)
+            if poll_job and not poll_job.is_queued:
+                poll_job.delete()
+                update_weekly_poll.delay(wp.id, job_id=job_id)
+    finally:
+        queue = get_queue("high")
+        queue.enqueue_in(timedelta(seconds=60 * 10), "polls.tasks.sync_polls", job_id="sync_polls")

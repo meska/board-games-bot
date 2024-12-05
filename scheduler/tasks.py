@@ -9,21 +9,19 @@ from sentry_sdk import capture_exception
 
 
 def clean_or_recover_errors(queue, jobs_id):
-    tz = pytz.timezone('UTC')
+    tz = pytz.timezone("UTC")
     for job_id in jobs_id:
         # considero solo i più vecchi di 1 ora
         job_to_recover = queue.fetch_job(job_id)
         if job_to_recover:
-            if job_to_recover.func_name == 'scheduler.tasks.recover_jobs':
+            if job_to_recover.func_name == "scheduler.tasks.recover_jobs":
                 job_to_recover.delete()
 
-            if job_to_recover.ended_at and tz.localize(job_to_recover.ended_at) < (
-                    timezone.now() + timedelta(hours=-1)):
+            if job_to_recover.ended_at and tz.localize(job_to_recover.ended_at) < (timezone.now() + timedelta(hours=-1)):
                 print(f"Recovering Job {job_to_recover}")
                 job_to_recover.requeue()
 
-            if job_to_recover.enqueued_at and tz.localize(job_to_recover.enqueued_at) < (
-                    timezone.now() + timedelta(hours=-2)):
+            if job_to_recover.enqueued_at and tz.localize(job_to_recover.enqueued_at) < (timezone.now() + timedelta(hours=-2)):
                 print(f"Recovering Job {job_to_recover}")
                 job_to_recover.requeue()
         else:
@@ -32,7 +30,7 @@ def clean_or_recover_errors(queue, jobs_id):
 
 
 def clean_deferreds(queue, jobs_id):
-    tz = pytz.timezone('UTC')
+    tz = pytz.timezone("UTC")
     for job_id in jobs_id:
         # considero solo i più vecchi di 3 ore
         scheduled_job = queue.fetch_job(job_id)
@@ -93,16 +91,22 @@ def recover_jobs():
         clean_or_recover_errors(q, q.failed_job_registry.get_job_ids())
         clean_deferreds(q, q.deferred_job_registry.get_job_ids())
 
+
 @job
 def healthcheck():
     # Task che aggiorna una variabile in redis con l'orario di esecuzione per ogni coda
     # Se la variabile non viene aggiornata per più di 5 minuti, il task scheduler va riavviato dall'healthcheck docker
     from django.conf import settings
+
     print("Healthcheck")
     rq_queues = [x for x in settings.RQ_QUEUES]
     for queue_name in rq_queues:
         queue = queues.get_queue(queue_name)
         queue.enqueue(store_healtcheck, queue_name, at_front=True)
+
+    queue = queues.get_queue("high")
+    queue.enqueue_in(timedelta(seconds=60 * 10), "scheduler.tasks.healthcheck", job_id="healthcheck")
+
 
 @job
 def store_healtcheck(queue):
