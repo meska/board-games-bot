@@ -13,13 +13,14 @@ from telegram.ext import CallbackContext, InvalidCallbackData
 from bot.models import forget_user, get_user, left_chat_user, new_chat_user
 from polls.models import get_weekly_poll, get_wp_partecipating_users
 
-logger = logging.getLogger(f'gamebot.{__name__}')
+logger = logging.getLogger(f"gamebot.{__name__}")
 
 
 async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
     translation.activate(update.effective_user.language_code)
     if context.args and context.args[0] == "games":
         from games.commands import handle_games
+
         await handle_games(update, context)
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=_("Welcome to Game Night Bot!"))
@@ -27,7 +28,7 @@ async def start(update: Update, context: CallbackContext.DEFAULT_TYPE):
 
 async def cleanup(time: int, messages: list) -> None:
     """
-        Delete messages after a certain time
+    Delete messages after a certain time
     """
     await sleep(time)
     for message in messages:
@@ -39,7 +40,7 @@ async def cleanup(time: int, messages: list) -> None:
 
 async def handle_query_callback(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """
-        Query Callback router
+    Query Callback router
     """
     query = update.callback_query
 
@@ -50,14 +51,17 @@ async def handle_query_callback(update: Update, context: CallbackContext.DEFAULT
     if isinstance(query.data, InvalidCallbackData):
         await query.message.delete()
         return
-    if query.data.get('handler') == 'weeklypoll':
+    if query.data.get("handler") == "weeklypoll":
         from polls.commands import weeklypoll
+
         await weeklypoll(update, context)
-    elif query.data.get('handler') == 'games':
+    elif query.data.get("handler") == "games":
         from games.commands import handle_games
+
         await handle_games(update, context)
-    elif query.data.get('handler') == 'play':
+    elif query.data.get("handler") == "play":
         from games.commands import handle_play
+
         await handle_play(update, context)
     else:
         # context gone, delete the message
@@ -66,15 +70,16 @@ async def handle_query_callback(update: Update, context: CallbackContext.DEFAULT
 
 async def handle_replies(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """
-        Reply router
+    Reply router
     """
 
-    if context.user_data.get('play_score'):
+    if context.user_data.get("play_score"):
         from games.commands import handle_score
+
         await handle_score(update, context)
         return
 
-    if context.user_data.get('forgetting'):
+    if context.user_data.get("forgetting"):
         await handle_forget(update, context)
         return
 
@@ -85,8 +90,9 @@ async def handle_replies(update: Update, context: CallbackContext.DEFAULT_TYPE) 
     if query and query.message:
         await query.message.delete()
 
-    if isinstance(query.data, dict) and query.data.get('handler') == 'games':
+    if isinstance(query.data, dict) and query.data.get("handler") == "games":
         from games.commands import handle_games
+
         await handle_games(update, context)
     else:
         # context gone, delete the message
@@ -96,13 +102,14 @@ async def handle_replies(update: Update, context: CallbackContext.DEFAULT_TYPE) 
 async def version(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """Sends the version of the bot"""
     from toml import load
-    toml_file = load(os.path.join(settings.BASE_DIR, 'pyproject.toml'))
+
+    toml_file = load(os.path.join(settings.BASE_DIR, "pyproject.toml"))
 
     print(toml_file)
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f"{toml_file.get('tool').get('poetry').get('description')}\nVersion {toml_file.get('tool').get('poetry').get('version')}"
+        text=f"{toml_file.get('tool').get('poetry').get('description')}\nVersion {toml_file.get('tool').get('poetry').get('version')}",
     )
 
 
@@ -115,7 +122,7 @@ async def handle_dice(update: Update, context: CallbackContext.DEFAULT_TYPE) -> 
 # noinspection PyUnusedLocal
 async def handle_enroll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """
-        Register user in the bot, useful when the bot is addedd later to the group
+    Register user in the bot, useful when the bot is addedd later to the group
     """
     translation.activate(update.effective_user.language_code)
 
@@ -125,7 +132,7 @@ async def handle_enroll(update: Update, context: CallbackContext.DEFAULT_TYPE) -
         chat_id=update.effective_chat.id,
         text=_(
             f"You are now enrolled in GameBot {db_user.name}\nyour telegram id and name will be stored to enable all functions.\nYou can also use /forget to remove your registration and delete your data."
-        )
+        ),
     )
 
     await cleanup(10, [update.message, message])
@@ -134,39 +141,29 @@ async def handle_enroll(update: Update, context: CallbackContext.DEFAULT_TYPE) -
 # noinspection PyUnusedLocal
 async def handle_forget(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     """
-        Forget user data
+    Forget user data
     """
 
     translation.activate(update.effective_user.language_code)
 
-    if context.user_data.get('forgetting') and (
-            update.message.text.lower().strip() == _("yes") or update.message.text.lower().strip() == 'yes'):
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=_("Ok, I will delete your data")
-        )
+    if context.user_data.get("forgetting") and (update.message.text.lower().strip() == _("yes") or update.message.text.lower().strip() == "yes"):
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=_("Ok, I will delete your data"))
         await forget_user(update.effective_user)
         await context.bot.send_animation(
-            chat_id=update.effective_chat.id,
-            animation="https://tenor.com/view/south-park-and-its-gone-sad-talking-its-finished-gif-17584433"
+            chat_id=update.effective_chat.id, animation="https://tenor.com/view/south-park-and-its-gone-sad-talking-its-finished-gif-17584433"
         )
 
         context.user_data.clear()
-    elif context.user_data.get('forgetting'):
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=_("Ok, I will not delete your data")
-        )
+    elif context.user_data.get("forgetting"):
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=_("Ok, I will not delete your data"))
         context.user_data.clear()
     else:
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=_(
-                "Are you sure you want to delete all your data and statistics ?\nthis operation is not reversible.\nType YES to confirm."
-            ),
-            reply_markup=ForceReply(selective=True)
+            text=_("Are you sure you want to delete all your data and statistics ?\nthis operation is not reversible.\nType YES to confirm."),
+            reply_markup=ForceReply(selective=True),
         )
-        context.user_data['forgetting'] = True
+        context.user_data["forgetting"] = True
 
 
 # noinspection PyUnusedLocal
@@ -197,26 +194,20 @@ async def roll(update: Update, context: CallbackContext.DEFAULT_TYPE) -> None:
     translation.activate(update.effective_user.language_code)
     wp = await get_weekly_poll(update.effective_chat.id)
     if not wp or not wp.message_id:
-        msg = await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=_("No weekly poll available")
-        )
+        msg = await context.bot.send_message(chat_id=update.effective_chat.id, text=_("No weekly poll available"))
         await cleanup(10, [msg, update.message])
         return
     users = await get_wp_partecipating_users(wp.id)  # get poll users
     if not users:
-        msg = await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=_("No users participating in the weekly poll, try later")
-        )
+        msg = await context.bot.send_message(chat_id=update.effective_chat.id, text=_("No users participating in the weekly poll, try later"))
         await cleanup(10, [msg, update.message])
         return
-    userstable = "\n".join([user['user_name'] for user in users])
+    userstable = "\n".join([user["user__username"] for user in users])
     msg = await context.bot.send_message(update.effective_chat.id, _(f"Choosing an user from these:\n\n{userstable}"))
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
     await sleep(2)
     winner = randint(0, len(users) - 1)
-    await msg.edit_text(text=_(f"I choose {users[winner]['user_name']}!"))
+    await msg.edit_text(text=_(f"I choose {users[winner]['user__username']}!"))
     await cleanup(30, [msg, update.message])
 
 
@@ -225,15 +216,12 @@ async def roll_deprecated(update: Update, context: CallbackContext.DEFAULT_TYPE)
 
     wp = await get_weekly_poll(update.effective_chat.id)
     if not wp or not wp.message_id:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=_("No weekly poll available")
-        )
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=_("No weekly poll available"))
     users = await get_wp_partecipating_users(wp.id)  # get poll users
     y = 0
     for user in users:
-        user['msgname'] = await context.bot.send_message(update.effective_chat.id, f"{user['user_name']}:")
-        user['dice'] = await context.bot.send_dice(update.effective_chat.id)
+        user["msgname"] = await context.bot.send_message(update.effective_chat.id, f"{user['user_name']}:")
+        user["dice"] = await context.bot.send_dice(update.effective_chat.id)
         y += 2
         await sleep(0.1)
     # wait for animations to finish
@@ -243,8 +231,8 @@ async def roll_deprecated(update: Update, context: CallbackContext.DEFAULT_TYPE)
     winner_number = 0
     winner_user = None
     for user in users:
-        if user['dice'].dice.value > winner_number:
-            winner_number = user['dice'].dice.value
+        if user["dice"].dice.value > winner_number:
+            winner_number = user["dice"].dice.value
             winner_user = user
 
     await context.bot.send_message(update.effective_chat.id, f"{winner_user['user_name']} wins!")
